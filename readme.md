@@ -2,6 +2,7 @@
 
 This codelab is part of the Android Kotlin Fundamentals course. All the course codelabs are listed on the Android Kotlin Fundamentals codelabs landing page.
 
+* auto-gen TOC:
 {:toc}
 
 # Data binding basics (databinding app)
