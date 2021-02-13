@@ -3,7 +3,7 @@
 This codelab is part of the Android Kotlin Fundamentals course. All the course codelabs are listed on the Android Kotlin Fundamentals codelabs landing page.
 
 
-# Data binding basics
+# Data binding basics (app1)
    
 when your app has complex view hierarchies, findViewById() is expensive and slows down the app, because Android traverses the view hierarchy, starting at the root, until it finds the desired view. Fortunately, there's a better way.
 
@@ -39,6 +39,95 @@ you need to wrap the xml with `<layout>` tag, this is so that the root calss is 
 
 ## Step 3 create a data binding object in the main activity 
 
-add a reference to the binding objet to the main acitivty si that you cans use it to access views
+add a reference to the binding objet to the main acitivty si that you cans use it to access views, then import it 
 
     private lateinit var binding: ActivityMainBinding
+
+Next, you replace the current `setContentView()` function with an instruction that does the following:
+
+- creates the binding object
+- uses the `setContentView()` function from the DataBindingUtil class to associate the `activity_main` layout with the `MainActivity` 
+- in `onCreate()` replace the `setContentView()` call with the following line of code and import it
+
+
+    binding = DataBindingUtil.setContentView(this,R.layout.activity_main)
+
+
+## Step 4 use the binding object to replace all calls to the findViewById()
+
+When the binding object is created, the compiler generates the names of the views in the binding object from the IDs of the views in the layout, converting them to camel case
+for example the `done_button` is `doneButton` in the binding obejct
+
+    binding.doneButton.setOnClickListener{
+        addNickname(it)
+    }
+    
+inside the addNickname
+
+    binding.nicknameText.text = binding.nicknameEdit.text.tostring()
+    binding.nicknameEdit.visibility = View.GONE
+    binding.doneButton.visibility = View.GONE
+    binding.nicknameText.visibility = View.VISIBLE
+
+kotlinze the fiunciotn
+
+    binding.apply {
+       nicknameText.text = nicknameEdit.text.toString()
+       nicknameEdit.visibility = View.GONE
+       doneButton.visibility = View.GONE
+       nicknameText.visibility = View.VISIBLE
+    }
+    
+## Step 5 create the model 
+
+    data class MyName(var name: String = "", var nickname: String = "")
+
+the data keyword for all model classes (the class will hold data) also the compiler will create extra classes such as equals() and hashcode() and toString()
+
+// not valid here
+the @string Rest annotation is not required but we recommend you include it
+
+- the annotation helps the code inspector built into android studio named Lint verify at compile time that usages of the constructor provide a valid string resource ID
+- the annotation makes your code more readble for other developer
+
+## Step 6 add data
+
+in xml the the name Textview will reference to the name from the data class
+
+between the `<layout>` tags add `<data></data>`
+
+    <data>
+        <variable
+            name="myName"
+            type="com.daniel.androidkotlinfundamentals" />
+    </data>
+    
+    inside the textview
+    
+    android:text="@={myName.name}"
+    
+    and 
+    
+    android:text="@={myName.nickname}"
+
+in the main act.
+
+    private val myName: MyName = MyName("Aleks Haecky")
+
+and in on create set the layout value
+
+    binding.myName = myName
+
+for the nickname get the data from the edit text
+
+    myName?.nickname = nicknameEdit.text.toString()
+
+After the nickname is set, you want your code to refresh the UI with the new data. To do this, you must invalidate all binding expressions so that they are recreated with the correct data.
+
+Add `invalidateAll()` after setting the nickname so that the UI is refreshed with the value in the updated binding object.
+
+    binding.apply {
+       myName?.nickname = nicknameEdit.text.toString()
+       invalidateAll()
+       ...
+    }
