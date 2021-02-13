@@ -2,8 +2,9 @@
 
 This codelab is part of the Android Kotlin Fundamentals course. All the course codelabs are listed on the Android Kotlin Fundamentals codelabs landing page.
 
+{:toc}
 
-# Data binding basics (app1)
+# Data binding basics (databinding app)
    
 when your app has complex view hierarchies, findViewById() is expensive and slows down the app, because Android traverses the view hierarchy, starting at the root, until it finds the desired view. Fortunately, there's a better way.
 
@@ -131,3 +132,8 @@ Add `invalidateAll()` after setting the nickname so that the UI is refreshed wit
        invalidateAll()
        ...
     }
+
+run 
+
+# Navigation
+Base code provided form the google collab
