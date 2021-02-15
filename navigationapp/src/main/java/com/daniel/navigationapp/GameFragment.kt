@@ -8,6 +8,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.databinding.DataBindingComponent
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
+import androidx.navigation.findNavController
 import com.daniel.navigationapp.databinding.FragmentGameBinding
 
 class GameFragment : Fragment() {
@@ -98,30 +99,33 @@ class GameFragment : Fragment() {
         binding.submitButton.setOnClickListener {
             val checkedId = binding.questionRadioGroup.checkedRadioButtonId
             // Do nothing if nothing is checked (id == -1)
-            if (-1 != checkedId){
-                var answerIndex=0
+            if (-1 != checkedId) {
+                var answerIndex = 0
 
-                when (checkedId){
-                    R.id.secondAnswerRadioButton -> answerIndex =1
-                    R.id.thirdAnswerRadioButton -> answerIndex =2
-                    R.id.fourthAnswerRadioButton -> answerIndex =3
+                when (checkedId) {
+                    R.id.secondAnswerRadioButton -> answerIndex = 1
+                    R.id.thirdAnswerRadioButton -> answerIndex = 2
+                    R.id.fourthAnswerRadioButton -> answerIndex = 3
 
                 }
                 // The first answer in the original question is always the correct one, so if our
                 // answer matches, we have the correct answer.
-                if (answers[answerIndex]==currentQuestion.answers[0]){
+                if (answers[answerIndex] == currentQuestion.answers[0]) {
                     questionIndex++
                     // advance to the next question
-                    if (questionIndex < numQuestions){
+                    if (questionIndex < numQuestions) {
                         currentQuestion = questions[questionIndex]
                         setQuestion()
                         binding.invalidateAll()
                     } else {
-                        // weve won navigate to the gamewonfragment
+                        // We've won!  Navigate to the gameWonFragment.
+                        requireView().findNavController()
+                            .navigate(R.id.action_gameFragment_to_gameWonFragment)
                     }
                 } else {
-                    // game over a wrong answer sends us to gameoverfragment
-                }
+                    // Game over! A wrong answer sends us to the gameOverFragment.
+                    requireView().findNavController().
+                    navigate(R.id.action_gameFragment_to_gameOverFragment)                }
             }
         }
         return binding.root
@@ -136,13 +140,14 @@ class GameFragment : Fragment() {
 
     // Sets the question and randomizes the answers.  This only changes the data, not the UI.
     // Calling invalidateAll on the FragmentGameBinding updates the data.
-    private fun setQuestion(){
+    private fun setQuestion() {
         currentQuestion = questions[questionIndex]
 
         // randomize the answers into a copy of the array
         answers = currentQuestion.answers.toMutableList()
         answers.shuffle()
-        (activity as AppCompatActivity).supportActionBar?.title = getString(R.string.title_android_trivia_question, questionIndex + 1, numQuestions)
+        (activity as AppCompatActivity).supportActionBar?.title =
+            getString(R.string.title_android_trivia_question, questionIndex + 1, numQuestions)
 
     }
 }
