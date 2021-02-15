@@ -1,3 +1,2 @@
 include ':navigationapp'
-include ':databinding'
 rootProject.name = "AndroidKotlinFundamentals"

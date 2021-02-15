@@ -135,7 +135,101 @@ Add `invalidateAll()` after setting the nickname so that the UI is refreshed wit
 
 run 
 
-# Navigation
+### Full code
+
+```kotlin
+class MainActivity : AppCompatActivity() {
+    data class MyName(var name: String = "", var nickname: String = "")
+    
+    private lateinit var binding: ActivityMainBinding
+    private val myName: MyName = MyName("Aleks Haecky")
+
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        binding = DataBindingUtil.setContentView(this,R.layout.activity_main)
+        binding.myName = myName
+
+        binding.doneButton.setOnClickListener{
+            addNickName(it)
+        }
+    }
+
+    private fun addNickName(view: View) {
+        myName?.nickname = binding.nicknameEdit.text.toString()
+        binding.invalidateAll()
+        binding.nicknameText.text = binding.nicknameEdit.text.toString()
+        binding.nicknameEdit.visibility = View.GONE
+        binding.doneButton.visibility = View.GONE
+        binding.nicknameText.visibility = View.VISIBLE
+    }
+}
+```
+
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:tools="http://schemas.android.com/tools"
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <data>
+        <variable
+            name="myName"
+            type="com.daniel.androidkotlinfundamentals.MyName" />
+    </data>
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        tools:context=".MainActivity">
+
+        <TextView
+            android:id="@+id/name_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="64dp"
+            android:text="@={myName.name}"
+            app:layout_constraintBottom_toTopOf="@+id/nickname_edit"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.5"
+            app:layout_constraintStart_toStartOf="parent" />
+
+        <TextView
+            android:id="@+id/nickname_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@={myName.nickname}"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <EditText
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="56dp"
+            android:id="@+id/nickname_edit"
+            app:layout_constraintBottom_toTopOf="@+id/nickname_text"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.0"
+            app:layout_constraintStart_toStartOf="parent" />
+
+        <com.google.android.material.button.MaterialButton
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="3i3i"
+            android:id="@+id/done_button"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/nickname_text" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</layout>
+
+```
+
+# NavigationApp
+
 Base code provided form the google collab
 
 in fragment binding the layout to the fragment and inflate it using (in the onCreateView())
@@ -390,3 +484,5 @@ Edit the onSupportNavigateUp() method to return NavigationUI.navigateUp instead 
     }
     
 summary [https://developer.android.com/codelabs/kotlin-android-training-add-navigation/index.html#11](here)
+
+#
