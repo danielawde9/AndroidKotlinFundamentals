@@ -2,9 +2,6 @@
 
 This codelab is part of the Android Kotlin Fundamentals course. All the course codelabs are listed on the Android Kotlin Fundamentals codelabs landing page.
 
-* auto-gen TOC:
-{:toc}
-
 # Data binding basics (databinding app)
    
 when your app has complex view hierarchies, findViewById() is expensive and slows down the app, because Android traverses the view hierarchy, starting at the root, until it finds the desired view. Fortunately, there's a better way.
@@ -104,19 +101,21 @@ between the `<layout>` tags add `<data></data>`
             type="com.daniel.androidkotlinfundamentals" />
     </data>
     
-    inside the textview
+inside the Name textview
     
     android:text="@={myName.name}"
     
-    and 
+to add a default text and value
+
+    tools:text="What color is the Android mascot?"
     
     android:text="@={myName.nickname}"
 
-in the main act.
+in the main act we add data using the model
 
     private val myName: MyName = MyName("Aleks Haecky")
 
-and in on create set the layout value
+and in on create bind the layout variable to the activity class
 
     binding.myName = myName
 
@@ -138,3 +137,27 @@ run
 
 # Navigation
 Base code provided form the google collab
+
+in fragment binding the layout to the fragment and inflate it using 
+
+    // inflate the layout
+    val binding = DataBindingUtil.inflate<FragmentGameBinding>(
+        inflater, R.layout.fragment_game, container, false
+    )
+    
+    //bind this fragment class to the layout (data variable)
+    binding.game = this
+
+### Side note
+
+in activity
+   
+    binding = DataBindingUtil.setContentView(this,R.layout.activity_main)
+
+    binding.myName = myName
+    
+in radio group 
+    
+    val checkedId = binding.questionRadioGroup.checkedRadioButtonId
+    // Do nothing if nothing is checked (id == -1)
+    if (-1 != checkedId) {
