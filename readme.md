@@ -1,8 +1,45 @@
-# Android Collab 
+# 1. Android Collab 
 
 This codelab is part of the Android Kotlin Fundamentals course. All the course codelabs are listed on the Android Kotlin Fundamentals codelabs landing page.
 
-# Data binding basics (databinding app)
+
+- [1. Android Collab](#1-android-collab)
+- [2. Data binding basics (databinding app)](#2-data-binding-basics-databinding-app)
+  - [2.1. Step 1 Enable data binding](#21-step-1-enable-data-binding)
+  - [2.2. Step 2 Changle layout file to be usable with data binding](#22-step-2-changle-layout-file-to-be-usable-with-data-binding)
+  - [2.3. Step 3 create a data binding object in the main activity](#23-step-3-create-a-data-binding-object-in-the-main-activity)
+  - [2.4. Step 4 use the binding object to replace all calls to the findViewById()](#24-step-4-use-the-binding-object-to-replace-all-calls-to-the-findviewbyid)
+  - [2.5. Step 5 create the model](#25-step-5-create-the-model)
+  - [2.6. Step 6 add data](#26-step-6-add-data)
+    - [2.6.1. Full code](#261-full-code)
+- [3. NavigationApp](#3-navigationapp)
+    - [3.0.1. Side note](#301-side-note)
+  - [3.1. Navigation Component](#31-navigation-component)
+    - [3.1.1. Adding a navigation graph to the project](#311-adding-a-navigation-graph-to-the-project)
+    - [3.1.2. NavHostFragment](#312-navhostfragment)
+    - [3.1.3. Add a click handler to the Play button](#313-add-a-click-handler-to-the-play-button)
+    - [3.1.4. Set the pop behavior for the navigation actions](#314-set-the-pop-behavior-for-the-navigation-actions)
+      - [3.1.4.1. Up Button in the navbar](#3141-up-button-in-the-navbar)
+      - [3.1.4.2. option menu](#3142-option-menu)
+    - [3.1.5. Navigation Drawer](#315-navigation-drawer)
+  - [3.2. Summary](#32-summary)
+- [4. External Activities](#4-external-activities)
+  - [4.1. Safe Args dependencies](#41-safe-args-dependencies)
+    - [4.1.1. add the code](#411-add-the-code)
+    - [4.1.2. add the arguments](#412-add-the-arguments)
+    - [4.1.3. Replace Fragment classes with NavDirection classes](#413-replace-fragment-classes-with-navdirection-classes)
+  - [4.2. Implicit intents](#42-implicit-intents)
+    - [4.2.1. Build and call an implicit intent](#421-build-and-call-an-implicit-intent)
+  - [4.3. Summary](#43-summary)
+- [5. Lifecycles and logging](#5-lifecycles-and-logging)
+  - [5.1. Recap](#51-recap)
+  - [5.2. fragmnet lifecycle](#52-fragmnet-lifecycle)
+  - [5.3. desert-clicker app](#53-desert-clicker-app)
+  - [5.4. Complex lifecycle](#54-complex-lifecycle)
+    - [5.4.1. Turn DessertTimer into a LifecycleObserver](#541-turn-desserttimer-into-a-lifecycleobserver)
+
+
+# 2. Data binding basics (databinding app)
    
 when your app has complex view hierarchies, findViewById() is expensive and slows down the app, because Android traverses the view hierarchy, starting at the root, until it finds the desired view. Fortunately, there's a better way.
 
@@ -19,7 +56,7 @@ Data binding has the following benefit
 - the android system only traverses the view hierarchy once to get each view, and happen during app startup not at runtime when the user is interacting with the app\
 - you get type safety for accessing (meanes that the compiler validates types while compiling and it throws an error if you try to assign the wrong tupe to a varialble)
 
-## Step 1 Enable data binding 
+## 2.1. Step 1 Enable data binding 
 
 to user data binding you need to enable in gradule file (not enabled by default, cause increases compiling time and may affect app startup time)
 
@@ -32,11 +69,11 @@ Inside the android section, before the closing brace, add a buildFeatures sectio
 
 // it asked me to apply `id 'kotlin-kapt'` in plugins
 
-## Step 2 Changle layout file to be usable with data binding 
+## 2.2. Step 2 Changle layout file to be usable with data binding 
 
 you need to wrap the xml with `<layout>` tag, this is so that the root calss is no loginger a view group, but instead a layout that contains view vgroups and views
 
-## Step 3 create a data binding object in the main activity 
+## 2.3. Step 3 create a data binding object in the main activity 
 
 add a reference to the binding objet to the main acitivty si that you cans use it to access views, then import it 
 
@@ -52,7 +89,7 @@ Next, you replace the current `setContentView()` function with an instruction th
     binding = DataBindingUtil.setContentView(this,R.layout.activity_main)
 
 
-## Step 4 use the binding object to replace all calls to the findViewById()
+## 2.4. Step 4 use the binding object to replace all calls to the findViewById()
 
 When the binding object is created, the compiler generates the names of the views in the binding object from the IDs of the views in the layout, converting them to camel case
 for example the `done_button` is `doneButton` in the binding obejct
@@ -77,7 +114,7 @@ kotlinze the fiunciotn
        nicknameText.visibility = View.VISIBLE
     }
     
-## Step 5 create the model 
+## 2.5. Step 5 create the model 
 
     data class MyName(var name: String = "", var nickname: String = "")
 
@@ -89,7 +126,7 @@ the @string Rest annotation is not required but we recommend you include it
 - the annotation helps the code inspector built into android studio named Lint verify at compile time that usages of the constructor provide a valid string resource ID
 - the annotation makes your code more readble for other developer
 
-## Step 6 add data
+## 2.6. Step 6 add data
 
 in xml the the name Textview will reference to the name from the data class
 
@@ -135,7 +172,7 @@ Add `invalidateAll()` after setting the nickname so that the UI is refreshed wit
 
 run 
 
-### Full code
+### 2.6.1. Full code
 
 ```kotlin
 class MainActivity : AppCompatActivity() {
@@ -228,7 +265,7 @@ class MainActivity : AppCompatActivity() {
 
 ```
 
-# NavigationApp
+# 3. NavigationApp
 
 Base code provided form the google collab
 
@@ -251,7 +288,7 @@ in fragment binding the layout to the fragment and inflate it using (in the onCr
 -Assign the binding that DataBindingUtil.inflate returns to the binding variable.
 -Return binding.root from the method, which contains the inflated view. Your onCreateView() method now looks like the following code:
 
-### Side note
+### 3.0.1. Side note
 
 in activity
    
@@ -266,7 +303,7 @@ in radio group
     if (-1 != checkedId) {
 
 
-## Navigation Component
+## 3.1. Navigation Component
 is a lib that can manage complex naviagation deeplinking and compile time 
 
 in project build.gradle 
@@ -285,7 +322,7 @@ in app build gradle
       ...
     }
     
-### Adding a navigation graph to the project
+### 3.1.1. Adding a navigation graph to the project
 In the Project: Android pane, right-click the res folder and select New > Android Resource File.
 In the New Resource File dialog, select Navigation as the Resource type.
 In the File name field, name the file navigation.
@@ -293,7 +330,7 @@ Make sure the Chosen qualifiers box is empty, and click OK. A new file, navigati
 Open the res > navigation > navigation.xml file and click the Design tab to open the Navigation Editor. Notice the No NavHostFragments found message in the layout editor
 
 
-### NavHostFragment
+### 3.1.2. NavHostFragment
 a navigation host fragment acts as a host for the framgnets ina a navigation graph. The naviagation host fragment ius usually named NavHostFragment
 
 As the user moves between destinations defined in the navigation graph, the navigation host Fragment swaps fragments in and out as necessary. The Fragment also creates and manages the appropriate Fragment back stack.
@@ -333,7 +370,7 @@ To see the Action's attributes, click the arrow that connects the two fragments.
 
 ![](.readme_images/3a29f95c.png)
 
-### Add a click handler to the Play button
+### 3.1.3. Add a click handler to the Play button
 
 In Android Studio, open the TitleFragment.kt file. Inside the onCreateView() method, add the following code before the return statement:
 
@@ -347,7 +384,7 @@ in **fragment**
     view.findNavController()
        .navigate(R.id.action_gameFragment_to_gameWonFragment)
     
-### Set the pop behavior for the navigation actions
+### 3.1.4. Set the pop behavior for the navigation actions
    
 The Android system's Back button is shown as 1 in the screenshot above. If the user presses the Back button in the game-won fragment or the game-over Fragment, the app navigates to the question screen. Ideally, the Back button should navigate back to the app's title screen. You change the destination for the Back button in the next task.
 
@@ -377,7 +414,7 @@ in the attrbutes pane set the actions popUpTo to title fragment, and clear the p
 we want everything up to the titleFragment (but not including it) to be removed from the back stack
 same for the gameWon
 
-#### Up Button in the navbar
+#### 3.1.4.1. Up Button in the navbar
 
 Open the MainActivity.kt kotlin file. Inside the onCreate() method, add code to find the navigation controller object:
 
@@ -392,7 +429,7 @@ After the onCreate() method, override the onSupportNavigateUp() method to call n
             return navController.navigateUp()
         }
 
-#### option menu
+#### 3.1.4.2. option menu
 in navigation add the about fragment.
 
 Add the options-menu resource
@@ -422,7 +459,7 @@ Override the onOptionsItemSelected() method to take the appropriate action when 
                 || super.onOptionsItemSelected(item)
     }
 
-### Navigation Drawer
+### 3.1.5. Navigation Drawer
     
 To create a navigation drawer, you create the navigation menu. You also need to put your views inside a DrawerLayout in the layout file.
 
@@ -483,7 +520,7 @@ Edit the onSupportNavigateUp() method to return NavigationUI.navigateUp instead 
        return NavigationUI.navigateUp(navController, drawerLayout)
     }
     
-## Summary
+## 3.2. Summary
 To use the Android navigation library, you need to do some setup:
 
 - Add dependencies for navigation-fragment-ktx and navigation-ui-ktx in the module-level build.gradle file.
@@ -598,7 +635,7 @@ To make the Up button work with the drawer button, edit onSupportNavigateUp() to
        return NavigationUI.navigateUp(navController, drawerLayout)
     }
 
-# External Activities
+# 4. External Activities
 
 Before users can share their game results from within the AndroidTrivia app, your code needs to pass parameters from one Fragment to another. To prevent bugs in these transactions and make them type-safe, you use a Gradle plugin called Safe Args. The plugin generates NavDirection classes, and you add these classes to your code.
 
@@ -610,7 +647,7 @@ The kinds of errors that can occur are:
 - Missing key errors. If Fragment B requests an argument that isn't set in the bundle, the operation returns null. Again, this doesn't throw an error when the app is compiled but could cause severe problems when the user runs the app.
 You want to catch these errors when you compile the app in Android Studio, so that you catch these errors before deploying the app into production. In other words, you want to catch the errors during app development so that your users don't encounter them.
  
-## Safe Args dependencies  
+## 4.1. Safe Args dependencies  
     
     // Adding the safe-args dependency to the project Gradle file
     dependencies {
@@ -639,7 +676,7 @@ Add a NavDirection class to the game Fragment
 Open the GameFragment.kt Kotlin file that's in the java folder.
 Inside the onCreateView() method, locate the game-won conditional statement ("We've won!"). Change the parameter that's passed into the NavController.navigate() method: Replace the action ID for the game-won state with an ID that uses the actionGameFragmentToGameWonFragment() method from the GameFragmentDirections class.
 
-### add the code
+### 4.1.1. add the code
 
     view.findNavController()
             .navigate(GameFragmentDirections.actionGameFragmentToGameOverFragment())
@@ -652,7 +689,7 @@ Inside the onCreateView() method, locate the game-won conditional statement ("We
 
 we add arguments to the gameWonFragment and pass the argumnets safelly into a GameFragmentDirections method. similarly you then will replace the other Fragment classes with their equivialent NavDirection classes
 
-### add the arguments
+### 4.1.2. add the arguments
 Open the navigation.xml file, which is in the res > navigation folder. Click the Design tab to open the navigation graph, which is where you'll set the arguments in the fragments.
 In the preview, select the `gameWonFragment`.
 In the Attributes pane, expand the Arguments section.
@@ -676,7 +713,7 @@ to receive in gamewontfragment
     val args = GameWonFragmentArgs.fromBundle(requireArguments())
     Toast.makeText(context, "NumCorrect: ${args.numCorrect}, NumQuestions: ${args.numQuestions}", Toast.LENGTH_LONG).show()
 
-### Replace Fragment classes with NavDirection classes
+### 4.1.3. Replace Fragment classes with NavDirection classes
 
 When you use "safe arguments," you can replace Fragment classes that are used in navigation code with NavDirection classes. You do this so that you can use type-safe arguments with other fragments in the app.
 
@@ -695,7 +732,7 @@ same for GameOverFragment.kt
         .navigate(GameOverFragmentDirections.actionGameOverFragmentToGameFragment())
 
 
-## Implicit intents
+## 4.2. Implicit intents
 An Intent is a simple message object that's used to communicate between Android components. There are two types of intents: explicit and implicit. You can send a message to a specific target using an explicit intent. With an implicit intent, you initiate an Activity without knowing which app or Activity will handle the task. For example, if you want your app to take a photo, you typically don't care which app or Activity performs the task. When multiple Android apps can handle the same implicit intent, Android shows the user a chooser, so that the user can select an app to handle the request.
 
 Each implicit intent must have an ACTION that describes the type of thing that is to be done. Common actions, such as ACTION_VIEW, ACTION_EDIT, and ACTION_DIAL, are defined in the Intent class.
@@ -706,7 +743,7 @@ Inside the onCreateView() method, before the return, call the setHasOptionsMenu(
 
     setHasOptionsMenu(true)
 
-### Build and call an implicit intent
+### 4.2.1. Build and call an implicit intent
 Modify your code to build and call an Intent that sends the message about the user's game data. Because several different apps can handle an ACTION_SEND intent, the user will see a chooser that lets them select how they want to send their information.
 
     // Creating our Share Intent
@@ -743,7 +780,7 @@ Modify your code to build and call an Intent that sends the message about the us
              return super.onOptionsItemSelected(item)
      }
 
-## Summary
+## 4.3. Summary
 
 Safe args:
 
@@ -801,7 +838,7 @@ In the Fragment code, override the onCreateOptionsMenu() method to inflate the m
 Override the onOptionsItemSelected() to use startActivity() to send the Intent to other apps that can handle it.
 When the user taps the menu item, the intent is fired, and the user sees a chooser for the SEND action.
 
-# Lifecycles and logging
+# 5. Lifecycles and logging
 
 In this codelab, you learn about a fundamental part of Android: the activity and fragment lifecycle. The activity lifecycle is the set of states an activity can be in during its lifetime. The lifecycle extends from when the activity is initially created to when it is destroyed and the system reclaims that activity's resources. As a user navigates between activities in your app (and into and out of your app), those activities each transition between different states in the activity lifecycle.
 
@@ -815,7 +852,7 @@ Often, you want to change some behavior, or run some code when the activity life
 A fragment also has a lifecycle. A fragment's lifecycle is similar to an activity's lifecycle, so a lot of what you learn applies to both
 ![](.readme_images/2873b932.png)
 
-## Recap
+## 5.1. Recap
 
 binding
 
@@ -873,7 +910,7 @@ Timber uses the Application class because the whole app will be using this loggi
 When your app is in the background, it should not be actively running, to preserve system resources and battery life. You use the Activity lifecycle and its callbacks to know when your app is moving to the background so that you can pause any ongoing operations. Then you restart those operations when your app comes into the foreground.
 
 
-## fragmnet lifecycle
+## 5.2. fragmnet lifecycle
     
     override fun onAttach(context: Context) {
        super.onAttach(context)
@@ -927,7 +964,7 @@ Here you can see the entire startup lifecycle of the fragment, including these c
 - onStop(): Called when the fragment is no longer visible on screen; parallel to the activity's onStop().
 - onDestroyView(): Called when the fragment's view is no longer needed, to clean up the resources associated with that view.
 
-## desert-clicker app
+## 5.3. desert-clicker app
 
 Handler is a class meant to proccess a queue of messages (known as [android.os.Message]s)
 or actions (known as [Runnable]s)
@@ -996,10 +1033,10 @@ The lifecycle library, which is part of Android Jetpack, simplifies this task. T
 
 There are three main parts of the lifecycle library:
 
-## Complex lifecycle
+## 5.4. Complex lifecycle
 
 - Lifecycle owners, which are the components that have (and owns a lifecyle). activity and fragment are lifecycle owners, lifecycle ownser implement the `LifecycleOwner` interface.
 - the `Lifecycle` class, which holds the actual state of a lifecycle owner and triggers events when lifecycle changes happen
 - lfecycle observers, which observe the lifecycle state and perform tasks when the lifecycle changes. lifecycle observers implement the `LifecycleObserver` interface.
 
-### Turn DessertTimer into a LifecycleObserver
+### 5.4.1. Turn DessertTimer into a LifecycleObserver
