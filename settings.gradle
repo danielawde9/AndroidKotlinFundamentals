@@ -1,2 +1,3 @@
+include ':dessertclicker'
 include ':navigationapp'
 rootProject.name = "AndroidKotlinFundamentals"

@@ -543,6 +543,60 @@ The options menu
 
 The options menu is a menu that the user accesses from the app bar by tapping the icon with the three vertical dots 4cdd17fa43bfbe6.png. To create an options menu with a menu item that displays a Fragment, make sure the Fragment has an ID. Then define the options menu and code the onOptionsItemSelected() handler for the menu items.
 
+    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
+            super.onCreateOptionsMenu(menu, inflater)
+            inflater.inflate(R.menu.options_menu, menu)
+    }
+
+Override the onOptionsItemSelected() method to take the appropriate action when the menu item is clicked. The following code displays the Fragment that has the same ID as the menu item. (This code only works if the menu item and the Fragment have identical ID values.)
+
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+         return NavigationUI.
+                onNavDestinationSelected(item,requireView().findNavController())
+                || super.onOptionsItemSelected(item)
+    }
+
+Navigation drawer
+
+Add dependencies to build.gradle:
+The navigation drawer is part of the Material Components for Android library. Add the Material library to the build.gradle (app) file:
+
+
+    dependencies {
+        ...
+        implementation "com.google.android.material:material:$supportlibVersion"
+        ...
+    }
+
+Give each destination Fragment an ID:
+If a Fragment is reachable from the navigation drawer, open it in the navigation graph to make sure that it has an ID.
+Create the menu for the drawer:
+Create an Android resource file of type Menu (typically called navdrawer_menu) for a navigation drawer menu. This creates a new navdrawer_menu.xml file in the Res > Menu folder.
+In the design editor, add Menu Item widgets to the Menu.
+Add the drawer to the layout for the Fragment:
+In the layout that contains the navigation host Fragment (which is typically the main layout), use <androidx.drawerlayout.widget.DrawerLayout> as the root view.
+Add a <com.google.android.material.navigation.NavigationView> view to the layout.
+Connect the drawer to the navigation controller:
+Open the Activity that creates the navigation controller. (The main Activity is typically the one you want here.) In onCreate(), use NavigationUI.setupWithNavController()to connect the navigation drawer with the navigation controller:
+
+    val binding = DataBindingUtil.setContentView<ActivityMainBinding>(
+           this, R.layout.activity_main)
+    NavigationUI.setupWithNavController(binding.navView, navController)
+
+Set up the drawer button in the app bar:
+In onCreate() in the Activity that creates the navigation controller (which is typically the main Activity), pass the drawer layout as the third parameter to NavigationUI.setupActionBarWithNavController
+val binding = DataBindingUtil.setContentView<ActivityMainBinding>(
+    this, R.layout.activity_main)
+
+    NavigationUI.setupActionBarWithNavController(
+        this, navController, binding.drawerLayout)
+To make the Up button work with the drawer button, edit onSupportNavigateUp() to return NavigationUI.navigateUp(). Pass the navigation controller and the drawer layout to navigateUp().
+
+    override fun onSupportNavigateUp(): Boolean {
+       val navController = this.findNavController(R.id.myNavHostFragment)
+       return NavigationUI.navigateUp(navController, drawerLayout)
+    }
 
 # External Activities
 
@@ -748,3 +802,204 @@ Override the onOptionsItemSelected() to use startActivity() to send the Intent t
 When the user taps the menu item, the intent is fired, and the user sees a chooser for the SEND action.
 
 # Lifecycles and logging
+
+In this codelab, you learn about a fundamental part of Android: the activity and fragment lifecycle. The activity lifecycle is the set of states an activity can be in during its lifetime. The lifecycle extends from when the activity is initially created to when it is destroyed and the system reclaims that activity's resources. As a user navigates between activities in your app (and into and out of your app), those activities each transition between different states in the activity lifecycle.
+
+
+![](.readme_images/ee209a79.png)
+Often, you want to change some behavior, or run some code when the activity lifecycle state changes. Therefore the Activity class itself, and any subclasses of Activity such as AppCompatActivity, implement a set of lifecycle callback methods. Android invokes these callbacks when the activity moves from one state to another, and you can override those methods in your own activities to perform tasks in response to those lifecycle state changes. The following diagram shows the lifecycle states along with the available overridable callbacks.
+
+
+![](.readme_images/6e9d4543.png)
+
+A fragment also has a lifecycle. A fragment's lifecycle is similar to an activity's lifecycle, so a lot of what you learn applies to both
+![](.readme_images/2873b932.png)
+
+## Recap
+
+binding
+
+
+    // Contains all the views
+    private lateinit var binding: ActivityMainBinding
+    
+in on create()
+
+    // Use Data Binding to get reference to the views
+    binding = DataBindingUtil.setContentView(this, R.layout.activity_main)
+
+    binding.dessertButton.setOnClickListener {
+        onDessertClicked()
+    }
+    
+in xml
+
+    
+    <layout xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        xmlns:tools="http://schemas.android.com/tools">
+
+    <data>
+
+        <variable
+            name="revenue"
+            type="Integer" />
+
+        <variable
+            name="amountSold"
+            type="Integer" />
+    </data>
+    
+    ...    
+    android:text="@{amountSold.toString()}"
+
+>Note: The onCreate() method is an override. If you override any lifecycle methods, you must immediately call super.onCreate().
+
+Adding timber for debugging
+
+    implementation 'com.jakewharton.timber:timber:4.7.1'
+
+In this step, you create an Application class. Application is a base class that contains global application state for your entire app. It's also the main object that the operating system uses to interact with your app. There is a default Application class that Android uses if you don't specify one, so there's always an Application object created for your app, without you needing to do anything special to create it.
+
+Timber uses the Application class because the whole app will be using this logging library, and the library needs to be initialized once, before everything else is set up. In cases like this, you can subclass the Application class and override the defaults with your own custom implementation.
+
+>Warning: It might be tempting to add your own code to the Application class, because the class is created before all of your activities and can hold global state. But just as it's error-prone to make readable and writable static variables that are globally available, it's easy to abuse the Application class. Avoid putting any activity code in the Application class unless the code is really needed.
+    
+    override fun onResume() {
+       super.onResume()
+       Timber.i("onResume Called")
+    }
+
+When your app is in the background, it should not be actively running, to preserve system resources and battery life. You use the Activity lifecycle and its callbacks to know when your app is moving to the background so that you can pause any ongoing operations. Then you restart those operations when your app comes into the foreground.
+
+
+## fragmnet lifecycle
+    
+    override fun onAttach(context: Context) {
+       super.onAttach(context)
+       Log.i("TitleFragment", "onAttach called")
+    }
+    override fun onCreate(savedInstanceState: Bundle?) {
+       super.onCreate(savedInstanceState)
+       Log.i("TitleFragment", "onCreate called")
+    }
+    
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        Log.i("TitleFragment", "onViewCreated called")
+    }
+    
+    override fun onStart() {
+       super.onStart()
+       Log.i("TitleFragment", "onStart called")
+    }
+    override fun onResume() {
+       super.onResume()
+       Log.i("TitleFragment", "onResume called")
+    }
+    override fun onPause() {
+       super.onPause()
+       Log.i("TitleFragment", "onPause called")
+    }
+    override fun onStop() {
+       super.onStop()
+       Log.i("TitleFragment", "onStop called")
+    }
+    override fun onDestroyView() {
+       super.onDestroyView()
+       Log.i("TitleFragment", "onDestroyView called")
+    }
+    override fun onDetach() {
+       super.onDetach()
+       Log.i("TitleFragment", "onDetach called")
+    }
+
+
+Here you can see the entire startup lifecycle of the fragment, including these callbacks:
+
+- onAttach(): Called when the fragment is associated with its owner activity.
+- onCreate(): Similarly to onCreate() for the activity, onCreate() for the fragment is called to do initial fragment creation (other than layout).
+- onCreateView(): Called to inflate the fragment's layout.
+- onViewCreated(): Called immediately after onCreateView() has returned, but before any saved state has been restored into the view.
+- onStart(): Called when the fragment becomes visible; parallel to the activity's onStart().
+- onResume(): Called when the fragment gains the user focus; parallel to the activity's onResume().
+- onPause(): Called when the fragment loses the user focus; parallel to the activity's onPause().
+- onStop(): Called when the fragment is no longer visible on screen; parallel to the activity's onStop().
+- onDestroyView(): Called when the fragment's view is no longer needed, to clean up the resources associated with that view.
+
+## desert-clicker app
+
+Handler is a class meant to proccess a queue of messages (known as [android.os.Message]s)
+or actions (known as [Runnable]s)
+
+start timer
+
+    private var handler = Handler(Looper.getMainLooper())
+    private lateinit var runnable: Runnable
+
+
+    runnable = Runnable {
+        secondsCount++
+        Timber.i("Timer is at: $secondsCount")
+
+        // postDelayed re-adds the action to the queue of actions the Handler is cycling
+        // through the delayMillis param tells the handler to run the runnable in 1 second
+
+        handler.postDelayed(runnable, 1000)
+    }
+
+    // this what initially start the timer
+    handler.postDelayed(runnable, 1000)
+
+    // Note that the Thread the handler runs on is determined by a class called Looper.
+
+stop the timer
+
+        handler.removeCallbacks(runnable)
+
+calling the timer fun
+
+    dessertTimer = DessertTimer()
+
+
+
+       dessertTimer.startTimer()
+    
+       Timber.i("onStart called")
+       
+      dessertTimer.stopTimer()
+   
+      Timber.i("onStop Called")
+      
+      
+- Compile and run the app. In Android Studio, click the Logcat pane. In the Logcat search box, enter dessertclicker, which will filter by both the MainActivity and DessertTimer classes. Notice that once the app starts, the timer also starts running immediately.
+- Click the Back button and notice that the timer stops again. The timer stops because both the activity and the timer it controls have been destroyed.
+- Use the recents screen to return to the app. Notice in Logcat that the timer restarts from 0.
+- Click the Share button. Notice in Logcat that the timer is still running
+
+- Click the Home button. Notice in Logcat the timer stops running.
+- Use the recents screen to return to the app. Notice in Logcat the timer starts up again from where it left off because we called startTimer() in the onStart() method.
+- In MainActivity, in the onStop() method, comment out the call to stopTimer(). Commenting out stopTimer() demonstrates the case where you start an operation in onStart(), but forget to stop it again in onStop().
+- Compile and run the app, and click the Home button after the timer starts. Even though the app is in the background, the timer is running, and continually using system resources. Having the timer continue may unnecessarily use computing resources on your phone, and probably not the behavior you want.
+
+- Uncomment the line in onStop() where you stop the timer.
+- Cut and paste the startTimer() call from onStart() to onCreate(). This change demonstrates the case where you both initialize and start a resource in onCreate(), rather than using onCreate() to initialize it and onStart() to start it.
+- Compile and run the app. Notice that the timer starts running, as you would expect.
+- Click Home to stop the app. The timer stops running, as you would expect.
+- Use the recents screen to return to the app. Notice that the timer does not start again in this case, because onCreate() is only called when the app starts—it's not called when an app returns to the foreground.
+
+In the DessertClicker app, it's fairly easy to see that if you started the timer in onStart(), then you need to stop the timer in onStop(). There's only one timer, so stopping the timer is not difficult to remember.
+
+In a more complex Android app, you might set up many things in onStart() or onCreate(), then tear them all down in onStop() or onDestroy(). For example, you might have animations, music, sensors, or timers that you need to both set up and tear down, and start and stop. If you forget one, that leads to bugs and headaches.
+
+The lifecycle library, which is part of Android Jetpack, simplifies this task. The library is especially useful in cases where you have to track many moving parts, some of which are at different lifecycle states. The library flips around the way lifecycles work: Usually the activity or fragment tells a component (such as DessertTimer) what to do when a lifecycle callback occurs. But when you use the lifecycle library, the component itself watches for lifecycle changes, then does what's needed when those changes happen.
+
+There are three main parts of the lifecycle library:
+
+## Complex lifecycle
+
+- Lifecycle owners, which are the components that have (and owns a lifecyle). activity and fragment are lifecycle owners, lifecycle ownser implement the `LifecycleOwner` interface.
+- the `Lifecycle` class, which holds the actual state of a lifecycle owner and triggers events when lifecycle changes happen
+- lfecycle observers, which observe the lifecycle state and perform tasks when the lifecycle changes. lifecycle observers implement the `LifecycleObserver` interface.
+
+### Turn DessertTimer into a LifecycleObserver
