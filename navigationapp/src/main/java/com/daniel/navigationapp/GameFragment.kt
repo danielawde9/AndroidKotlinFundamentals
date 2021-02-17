@@ -119,13 +119,18 @@ class GameFragment : Fragment() {
                         binding.invalidateAll()
                     } else {
                         // We've won!  Navigate to the gameWonFragment.
+//                        requireView().findNavController()
+//                            .navigate(R.id.action_gameFragment_to_gameWonFragment)
                         requireView().findNavController()
-                            .navigate(R.id.action_gameFragment_to_gameWonFragment)
+                            .navigate(GameFragmentDirections.actionGameFragmentToGameWonFragment(numQuestions, questionIndex))
                     }
                 } else {
                     // Game over! A wrong answer sends us to the gameOverFragment.
-                    requireView().findNavController().
-                    navigate(R.id.action_gameFragment_to_gameOverFragment)                }
+//                    requireView().findNavController().
+//                    navigate(R.id.action_gameFragment_to_gameOverFragment)
+                    requireView().findNavController()
+                        .navigate(GameFragmentDirections.actionGameFragmentToGameOverFragment())
+                }
             }
         }
         return binding.root

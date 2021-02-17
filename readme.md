@@ -483,6 +483,268 @@ Edit the onSupportNavigateUp() method to return NavigationUI.navigateUp instead 
        return NavigationUI.navigateUp(navController, drawerLayout)
     }
     
-summary [https://developer.android.com/codelabs/kotlin-android-training-add-navigation/index.html#11](here)
+## Summary
+To use the Android navigation library, you need to do some setup:
 
-#
+- Add dependencies for navigation-fragment-ktx and navigation-ui-ktx in the module-level build.gradle file.
+- Add an ext variable for the navigationVersion in the project-level build.gradle file.
+
+Navigation destinations are fragments, activities, or other app components that the user navigates to. A navigation graph defines the possible paths from one navigation destination to the next.
+
+-To create a navigation graph, create a new Android resource file of type Navigation. This file defines the navigation flow through the app. The file is in the res/navigation folder, and it's typically called navigation.xml.
+-To see the navigation graph in the Navigation Editor, open the navigation.xml file and click the Design tab.
+-Use the Navigation Editor to add destinations such as fragments to the navigation graph.
+-To define the path from one destination to another, use the Navigation Graph to create an action that connects the destinations. In the navigation.xml file, each of these connections is represented as an action that has an ID.
+
+a navigation host fragment usually named NavHostFragment acts as a host for framgents in the navigation graph
+
+- as the user moves between destinations deffined in the navgation graph the `navhostfrgament`swaps the the fragments in and out oand manages the fragment backstack
+- in the activity_main.xml layout file the `NavHostFragment` is represented be a fragment element with name `android:name="androidx.navigation.fragment.NavHostFragment"`
+
+to define which fragment is displayed when the user taps a view for example a buitton. set on the onClick listener for the view call
+
+    findNavController().navigate()
+    
+specify the id of the action
+
+Conditional navigation navigates to one screen in one case, and to a different screen in another case. to create conditional navigation:
+
+- use the navigation editor to create a connection from the starting fragment to each of the possible destination fragments
+- give each connection a unique ID
+- in the click listener method for the View, add code to detect the condition then call the findNavController().navigate() on the view, passing in the ID for the appropriate action.
+
+
+The back button
+
+- in the navigation editor, you can use the attributes pane to change the action's `popUpTo` setting. this setting remives destinations from the back stack whihc have the effect of determining where the back button takes the user
+- the `popUpTo` setting apprears as the `popUpTo` attribute in the `navigation.xml`
+- selecting the `popUpToInclusive` checkbox sets the attribute to true > all destinations up to and including this destination are removed form the backstack
+![](.readme_images/1e366b04.png)
+
+if the action popUpTo attrubte is set to apps starting destination and inclusive is set to tryuue the backbutton takes the user out of the app
+
+The Up Button
+The navigation controller's NavigationUI library integrates with the app bar to allow the user to tap the Up button on the app bar to get back to the app's home screen from anywhere in the app.
+
+To link the navigation controller to the app bar:
+
+    val navController = this.findNavController(R.id.myNavHostFragment)
+    NavigationUI.setupActionBarWithNavController(this,navController)
+
+Override the onSupportNavigateUp() method to call navigateUp() in the navigation controller:
+
+    override fun onSupportNavigateUp(): Boolean {
+            val navController = this.findNavController(R.id.myNavHostFragment)
+            return navController.navigateUp()
+        }
+    }
+
+The options menu
+
+The options menu is a menu that the user accesses from the app bar by tapping the icon with the three vertical dots 4cdd17fa43bfbe6.png. To create an options menu with a menu item that displays a Fragment, make sure the Fragment has an ID. Then define the options menu and code the onOptionsItemSelected() handler for the menu items.
+
+
+# External Activities
+
+Before users can share their game results from within the AndroidTrivia app, your code needs to pass parameters from one Fragment to another. To prevent bugs in these transactions and make them type-safe, you use a Gradle plugin called Safe Args. The plugin generates NavDirection classes, and you add these classes to your code.
+
+Your app could use a Bundle to pass data from Fragment A to Fragment B. For example, Fragment A creates a bundle and saves the information as key-value pairs, then passes the Bundle to Fragment B. Then Fragment B uses a key to fetch a key-value pair from the Bundle. This technique works, but it can result in code that compiles, but then has the potential to cause errors when the app runs.
+
+The kinds of errors that can occur are:
+
+- Type mismatch errors. For example, if Fragment A sends a string but Fragment B requests an integer from the bundle, the request returns the default value of zero. Since zero is a valid value, this kind of type mismatch problem does not throw an error when the app is compiled. However, when the user runs the app, the error might make the app misbehave or crash.
+- Missing key errors. If Fragment B requests an argument that isn't set in the bundle, the operation returns null. Again, this doesn't throw an error when the app is compiled but could cause severe problems when the user runs the app.
+You want to catch these errors when you compile the app in Android Studio, so that you catch these errors before deploying the app into production. In other words, you want to catch the errors during app development so that your users don't encounter them.
+ 
+## Safe Args dependencies  
+    
+    // Adding the safe-args dependency to the project Gradle file
+    dependencies {
+       ...
+    classpath "androidx.navigation:navigation-safe-args-gradle-plugin:$navigationVersion"
+    
+    }
+
+Open the app-level build.gradle file.
+At the top of the file, after all the other plugins, add the apply plugin statement with the androidx.navigation.safeargs plugin:
+
+    apply plugin: 'androidx.navigation.safeargs'
+
+The app project now includes generated NavDirection classes.
+
+The Safe Args plugin generates a NavDirection class for each Fragment. These classes represent navigation from all the app's actions.
+
+For example, GameFragment now has a generated GameFragmentDirections class. You use the GameFragmentDirections class to pass type-safe arguments between the game Fragment and other fragments in the app.
+
+To see the generated files, explore the generatedJava folder in the Project > Android pane.
+
+>Caution: Do not edit the NavDirection classes. These classes are regenerated whenever the project is compiled, and your edits will be lost
+
+Add a NavDirection class to the game Fragment
+
+Open the GameFragment.kt Kotlin file that's in the java folder.
+Inside the onCreateView() method, locate the game-won conditional statement ("We've won!"). Change the parameter that's passed into the NavController.navigate() method: Replace the action ID for the game-won state with an ID that uses the actionGameFragmentToGameWonFragment() method from the GameFragmentDirections class.
+
+### add the code
+
+    view.findNavController()
+            .navigate(GameFragmentDirections.actionGameFragmentToGameOverFragment())
+            
+
+// Using directions to navigate to the GameWonFragment
+    
+    view.findNavController()
+        .navigate(GameFragmentDirections.actionGameFragmentToGameWonFragment())
+
+we add arguments to the gameWonFragment and pass the argumnets safelly into a GameFragmentDirections method. similarly you then will replace the other Fragment classes with their equivialent NavDirection classes
+
+### add the arguments
+Open the navigation.xml file, which is in the res > navigation folder. Click the Design tab to open the navigation graph, which is where you'll set the arguments in the fragments.
+In the preview, select the `gameWonFragment`.
+In the Attributes pane, expand the Arguments section.
+Click the + icon to add an argument. Name the argument numQuestions and set the type to Integer, then click Add. This argument represents the number of questions the user answered.
+
+If you try to build the app now, you will likely get two compile errors.
+
+
+No value passed for parameter 'numQuestions'
+No value passed for parameter 'numCorrect'
+
+to pass 
+
+    // Adding the parameters to the Action
+    view.findNavController()
+          .navigate(GameFragmentDirections
+                .actionGameFragmentToGameWonFragment(numQuestions, questionIndex))
+
+to receive in gamewontfragment
+
+    val args = GameWonFragmentArgs.fromBundle(requireArguments())
+    Toast.makeText(context, "NumCorrect: ${args.numCorrect}, NumQuestions: ${args.numQuestions}", Toast.LENGTH_LONG).show()
+
+### Replace Fragment classes with NavDirection classes
+
+When you use "safe arguments," you can replace Fragment classes that are used in navigation code with NavDirection classes. You do this so that you can use type-safe arguments with other fragments in the app.
+
+in TitleFragment
+
+previously
+            
+                view.findNavController().navigate(R.id.action_titleFragment_to_gameFragment)
+
+now 
+
+                view.findNavController().navigate(TitleFragmentDirections.actionTitleFragmentToGameFragment())
+
+same for GameOverFragment.kt 
+
+        .navigate(GameOverFragmentDirections.actionGameOverFragmentToGameFragment())
+
+
+## Implicit intents
+An Intent is a simple message object that's used to communicate between Android components. There are two types of intents: explicit and implicit. You can send a message to a specific target using an explicit intent. With an implicit intent, you initiate an Activity without knowing which app or Activity will handle the task. For example, if you want your app to take a photo, you typically don't care which app or Activity performs the task. When multiple Android apps can handle the same implicit intent, Android shows the user a chooser, so that the user can select an app to handle the request.
+
+Each implicit intent must have an ACTION that describes the type of thing that is to be done. Common actions, such as ACTION_VIEW, ACTION_EDIT, and ACTION_DIAL, are defined in the Intent class.
+
+Add an options menu to the Congratulations screen
+Open the GameWonFragment.kt Kotlin file.
+Inside the onCreateView() method, before the return, call the setHasOptionsMenu() method and pass in true:
+
+    setHasOptionsMenu(true)
+
+### Build and call an implicit intent
+Modify your code to build and call an Intent that sends the message about the user's game data. Because several different apps can handle an ACTION_SEND intent, the user will see a chooser that lets them select how they want to send their information.
+
+    // Creating our Share Intent
+    private fun getShareIntent() : Intent {
+       val args = GameWonFragmentArgs.fromBundle(requireArguments())
+       val shareIntent = Intent(Intent.ACTION_SEND)
+       shareIntent.setType("text/plain")
+                .putExtra(Intent.EXTRA_TEXT, getString(R.string.share_success_text, args.numCorrect, args.numQuestions))
+       return shareIntent
+    }
+    
+    // Starting an Activity with our new Intent
+    private fun shareSuccess() {
+       startActivity(getShareIntent())
+    }
+    
+    
+    // Showing the Share Menu Item Dynamically
+    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
+           super.onCreateOptionsMenu(menu, inflater)
+           inflater.inflate(R.menu.winner_menu, menu)
+           if(getShareIntent().resolveActivity(requireActivity().packageManager)==null){
+                menu.findItem(R.id.share).isVisible = false
+           }
+    }
+
+ If the result equals null, which means that the shareIntent doesn't resolve, find the sharing menu item from the inflated menu and make the menu item invisible.
+ 
+     // Sharing from the Menu
+     override fun onOptionsItemSelected(item: MenuItem): Boolean {
+             when(item.itemId){
+                 R.id.share -> shareSuccess()
+             }
+             return super.onOptionsItemSelected(item)
+     }
+
+## Summary
+
+Safe args:
+
+- to help catch error by missing or mismatched types whenj u pass data from 1 frag to another
+- each frag the safe arg plugin generate a corresponding `navdirection` class. you add the `navdirection` to the fragmnet code 
+- the `NavDirection` classes represent navigation from all the app's actions
+
+add the plugins 
+
+in the fragments we can use 
+
+    view.findNavController().navigate(GameFragmentDirections.actionGameFragmentToGameOverFragment())
+
+previously 
+
+    view.findNavController().navigate(R.id.action_titleFragment_to_gameFragment)
+        
+passing data between fragments using safe args
+
+Open the navigation.xml file, which is in the res > navigation folder. Click the Design tab to open the navigation graph, which is where you'll set the arguments in the fragments.
+In the preview, select the `gameWonFragment`.
+In the Attributes pane, expand the Arguments section.
+Click the + icon to add an argument. Name the argument numQuestions and set the type to Integer, then click Add. This argument represents the number of questions the user answered.
+
+If you try to build the app now, you will likely get two compile errors.
+
+
+No value passed for parameter 'numQuestions'
+No value passed for parameter 'numCorrect'
+
+to pass 
+
+    // Adding the parameters to the Action
+    view.findNavController()
+          .navigate(GameFragmentDirections
+                .actionGameFragmentToGameWonFragment(numQuestions, questionIndex))
+
+to receive in gamewontfragment
+
+    val args = GameWonFragmentArgs.fromBundle(requireArguments())
+    Toast.makeText(context, "NumCorrect: ${args.numCorrect}, NumQuestions: ${args.numQuestions}", Toast.LENGTH_LONG).show()
+
+
+Implicient intent
+An implicit intent declares an action that your app wants some other app (such as a camera app or email app) to perform on its behalf.
+If several Android apps could handle an implicit intent, Android shows the user a chooser. For example, when the user taps the share icon in the AndroidTrivia app, the user can select which app they want to use to share their game results.
+To build an intent, you declare an action to perform, for example ACTION_SEND.
+Several Intent() constructors are available to help you build intents.
+
+Sharing functionality:
+
+In the case of sharing your success with your friends, the Intent action would be Intent.ACTION_SEND.
+To add an options menu to a Fragment, set the setHasOptionsMenu() method to true in the Fragment code.
+In the Fragment code, override the onCreateOptionsMenu() method to inflate the menu.
+Override the onOptionsItemSelected() to use startActivity() to send the Intent to other apps that can handle it.
+When the user taps the menu item, the intent is fired, and the user sees a chooser for the SEND action.
+
+# Lifecycles and logging
