@@ -11,6 +11,11 @@ import androidx.databinding.DataBindingUtil
 import com.daniel.dessertclicker.databinding.ActivityMainBinding
 import timber.log.Timber
 
+const val KEY_REVENUE = "revenue_key"
+const val KEY_DESSERT_SOLD = "dessert_sold_key"
+const val KEY_TIMER_SECONDS = "timer_seconds_key"
+
+
 class MainActivity : AppCompatActivity() {
 
     private var revenue = 0
@@ -30,6 +35,7 @@ class MainActivity : AppCompatActivity() {
      * the dessert starts to be produced.
      */
     data class Dessert(val imageId:Int, val price: Int, val startProductionAmount: Int)
+
 
     // Create a list of all desserts, in order of when they start being produced
     private val allDessert = listOf(
@@ -54,8 +60,19 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = DataBindingUtil.setContentView(this, R.layout.activity_main)
 
-        dessertTimer = DessertTimer()
+        dessertTimer = DessertTimer(this.lifecycle)
 
+
+        // If there is a savedInstanceState bundle, then you're "restarting" the activity
+        // If there isn't a bundle, then it's a "fresh" start
+        if (savedInstanceState != null) {
+            revenue = savedInstanceState.getInt(KEY_REVENUE, 0)
+            dessertsSold = savedInstanceState.getInt(KEY_DESSERT_SOLD, 0)
+            dessertTimer.secondsCount =
+                savedInstanceState.getInt(KEY_TIMER_SECONDS, 0)
+            // Show the next dessert
+            showCurrentDessert()
+        }
 
         binding.dessertButton.setOnClickListener{
             onDessertClicked()
@@ -68,6 +85,16 @@ class MainActivity : AppCompatActivity() {
         // make sure the correct dessert is showing
         binding.dessertButton.setImageResource(currentDessert.imageId)
 
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+
+        outState.putInt(KEY_DESSERT_SOLD, dessertsSold)
+        outState.putInt(KEY_TIMER_SECONDS, dessertTimer.secondsCount)
+        outState.putInt(KEY_REVENUE, revenue)
+
+        Timber.i("onSaveInstanceState Called")
     }
 
 
@@ -90,15 +117,16 @@ class MainActivity : AppCompatActivity() {
 
     override fun onStart() {
         super.onStart()
-        dessertTimer.startTimer()
+//        dessertTimer.startTimer()
 
+        // DessertTimer is now observing the lifecycle itself and is automatically notified when the lifecycle state changes. All you do in these callbacks now is log a message.
         Timber.i("onStart called")
     }
 
     override fun onStop() {
         super.onStop()
-        dessertTimer.stopTimer()
-
+//        dessertTimer.stopTimer()
+//DessertTimer is now observing the lifecycle itself and is automatically notified when the lifecycle state changes. All you do in these callbacks now is log a message.
         Timber.i("onStop Called")
     }
 

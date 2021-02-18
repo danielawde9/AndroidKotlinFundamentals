@@ -1040,3 +1040,146 @@ There are three main parts of the lifecycle library:
 - lfecycle observers, which observe the lifecycle state and perform tasks when the lifecycle changes. lifecycle observers implement the `LifecycleObserver` interface.
 
 ### 5.4.1. Turn DessertTimer into a LifecycleObserver
+obersvation enables classes to know about the activity lifecycle, and start and stop themseleve in response to changs to those lifecycfles states, with a lifecycle observer you can remove the responsablity of starting and stopping objects from the activity and fragment methods
+
+Open the DesertTimer.kt class.
+Change the class signature of the DessertTimer class to look like this:
+
+    class DessertTimer(lifecycle: Lifecycle) : LifecycleObserver {
+
+* The constructor takes a Lifecycle object, which is the lifecycle that the timer is observing.
+* The class definition implements the LifecycleObserver interface.
+
+below the decleration of the runnable variable in DessertrTimer class add an init and use `addOberserver()` to connect the lifecycle object passed in from the owner (the activity ) to this class (the observer)
+
+     init {
+       lifecycle.addObserver(this)
+    }
+
+**Annotate** the `startTimer()` with `@OnLifecycleEvent` annotation, and use the `ON_START` lifecycle event.
+all the lifecucle events that your lifecuyycle observer can observe are in `Lifecycle.Event` class
+for example the `@OnLifecycleEvent(Lifecycle.Event.ON_START)` annotation indicates that the following method is watch `onStart` lifecycle events
+
+    @OnLifecycleEvent(Lifecycle.Event.ON_START)
+    fun startTimer() {
+    
+    @OnLifecycleEvent(Lifecycle.Event.ON_STOP)
+    fun stopTimer()
+    
+### Modify the MainActivity
+
+your mainactivity class is already a lifecycle owner through object-oriented inheritence. notice `MainActivity` sublcass from appcompatactivity which in turn subclasses from `FragmentActivity` since the fragment activity superclass imlemts theres nothing to do 
+all we need to do is pass the activity lifecycle object into the dessertime constructor
+
+Open MainActivity. In the onCreate() method, modify the initialization of DessertTimer to include this.lifecycle:
+
+    dessertTimer = DessertTimer(this.lifecycle)
+
+DessertTimer is now observing the lifecycle itself and is automatically notified when the lifecycle state changes. All you do in these callbacks now is log a message.
+
+## onSaveInstanceState()
+
+What happens to your app and its data if Android shuts down that app while it is in the background? This tricky edge case is important to understand.
+
+When your app goes into the background, it's not destroyed, it's only stopped and waiting for the user to return to it. But one of the Android OS's main concerns is keeping the activity that's in the foreground running smoothly. For example, if your user is using a GPS app to help them catch a bus, it's important to render that GPS app quickly and keep showing the directions. It's less important to keep the DessertClicker app, which the user might not have looked at for a few days, running smoothly in the background.
+
+Android regulates background apps so that the foreground app can run without problems. For example, Android limits the amount of processing that apps running in the background can do.
+
+Sometimes Android even shuts down an entire app process, which includes every activity associated with the app. Android does this kind of shutdown when the system is stressed and in danger of visually lagging, so no additional callbacks or code is run at this point. Your app's process is simply shut down, silently, in the background. But to the user, it doesn't look like the app has been closed. When the user navigates back to an app that the Android OS has shut down, Android restarts that ap
+
+If you see a lot of output that begins with Android Debug Bridge version X.XX.X and ends with tags to be used by logcat (see logcat --help), everything is fine. If instead you see adb: command not found, make sure the adb command is available in your execution path. For instructions, see "Add adb to your execution path" in the Utilities chapter. 5. Copy and paste this comment into the command line and press Return:
+
+
+    adb shell am kill com.example.android.dessertclicker
+This command tells any connected devices or emulators to send a STOP message to terminate the process with the dessertclicker package name, but only if the app is in the background. Because your app was in the background, nothing shows on the device or emulator screen to indicate that your process has been stopped. In Android Studio, click the Run tab to see the onStop() method called. Click the Logcat tab to see that the onDestroy() callback was never run—your activity simply ended.
+
+Use the recents screen to return to the app. Your app appears in recents whether it has been put into the background or has been stopped altogether. When you use the recents screen to return to the app, the activity is started up again. The activity goes through the entire set of startup lifecycle callbacks, including onCreate().
+Notice that when the app restarted, it resets your "score" (both the number of desserts sold and the total dollars) to the default values (0). If Android shut down your app, why didn't it save your state?
+
+When the OS restarts your app for you, Android tries its best to reset your app to the state it had before. Android takes the state of some of your views and saves it in a bundle whenever you navigate away from the activity.
+
+However, sometimes the Android OS doesn't know about all your data. For example, if you have a custom variable like revenue in the DessertClicker app, the Android OS doesn't know about this data or its importance to your activity. You need to add this data to the bundle yourself.
+![](.readme_images/67ffaf98.png)
+
+The `onSaveInstanceState`() method is the callback you use to save any data that you might need if the Android OS destroys your app. In the lifecycle callback diagram, onSaveInstanceState() is called **after the activity has been stopped**. It's called every time your app goes into the background.
+
+### Use onSaveInstanceState() to save bundle data
+
+
+In MainActivity, override the onSaveInstanceState() callback, and add a Timber log statement.
+
+You will use these keys for both saving and retrieving data from the instance state bundle.
+    
+
+    const val KEY_REVENUE = "revenue_key"
+    const val KEY_DESSERT_SOLD = "dessert_sold_key"
+    const val KEY_TIMER_SECONDS = "timer_seconds_key"
+
+    override fun onSaveInstanceState(outState: Bundle) {
+       super.onSaveInstanceState(outState)
+    
+       Timber.i("onSaveInstanceState Called")
+    }
+    
+ bundle is a collection of key-value pairs, where the keys are always strings. You can put primitive values, such as int and boolean values, into the bundle. Because the system keeps this bundle in RAM, it's a best practice to keep the data in the bundle small. The size of this bundle is also limited, though the size varies from device to device. Generally you should store far less than 100k, otherwise you risk crashing your app with the TransactionTooLargeException error. 
+
+In onSaveInstanceState(), put the revenue value (an integer) into the bundle with the putInt() method:
+
+    outState.putInt(KEY_REVENUE, revenue)
+
+### Use onCreate() to restore bundle data
+
+Add this code to onCreate(), after the DessertTimer setup:
+
+
+    if (savedInstanceState != null) {
+       revenue = savedInstanceState.getInt(KEY_REVENUE, 0)
+    }
+
+>Note: If the activity is being re-created, the onRestoreInstanceState() callback is called after onStart(), also with the bundle. Most of the time, you restore the activity state in onCreate(). But because onRestoreInstanceState() is called after onStart(), if you ever need to restore some state after onCreate() is called, you can use onRestoreInstanceState().
+
+The test for null determines whether there is data in the bundle, or if the bundle is null, which in turn tells you if the app has been started fresh or has been re-created after a shutdown. This test is a common pattern for restoring data from the bundle.
+
+    
+    if (savedInstanceState != null) {
+       revenue = savedInstanceState.getInt(KEY_REVENUE, 0)
+       dessertsSold = savedInstanceState.getInt(KEY_DESSERT_SOLD, 0)
+       dessertTimer.secondsCount =
+           savedInstanceState.getInt(KEY_TIMER_SECONDS, 0)
+    }
+
+## Summary
+
+Lifecycle tips
+If you set up or start something in a lifecycle callback, stop or remove that thing in the corresponding callback. By stopping the thing, you make sure it doesn't keep running when it's no longer needed. For example, if you set up a timer in onStart(), you need to pause or stop the timer in onStop().
+Use onCreate() only to initialize the parts of your app that run once, when the app first starts. Use onStart() to start the parts of your app that run both when the app starts, and each time the app returns to the foreground.
+Lifecycle library
+Use the Android lifecycle library to shift lifecycle control from the activity or fragment to the actual component that needs to be lifecycle-aware.
+Lifecycle owners are components that have (and thus "own") lifecycles, including Activity and Fragment. Lifecycle owners implement the LifecycleOwner interface.
+Lifecycle observers pay attention to the current lifecycle state and perform tasks when the lifecycle changes. Lifecycle observers implement the LifecycleObserver interface.
+Lifecycle objects contain the actual lifecycle states, and they trigger events when the lifecycle changes.
+To create a lifecycle-aware class:
+
+Implement the LifecycleObserver interface in classes that need to be lifecycle-aware.
+Initialize a lifecycle observer class with the lifecycle object from the activity or fragment.
+In the lifecycle observer class, annotate lifecycle-aware methods with the lifecycle state change they are interested in.
+For example, the @OnLifecycleEvent(Lifecycle.Event.ON_START)annotation indicates that the method is watching the onStart lifecycle event.
+
+Process shutdowns and saving activity state
+Android regulates apps running in the background so that the foreground app can run without problems. This regulation includes limiting the amount of processing that apps in the background can do, and sometimes even shutting down your entire app process.
+The user cannot tell if the system has shut down an app in the background. The app still appears in the recents screen and should restart in the same state in which the user left it.
+The Android Debug Bridge (adb) is a command-line tool that lets you send instructions to emulators and devices attached to your computer. You can use adb to simulate a process shutdown in your app.
+When Android shuts down your app process, the onDestroy() lifecycle method is not called. The app just stops.
+Preserving activity and fragment state
+When your app goes into the background, just after onStop() is called, app data is saved to a bundle. Some app data, such as the contents of an EditText, is automatically saved for you.
+The bundle is an instance of Bundle, which is a collection of keys and values. The keys are always strings.
+Use the onSaveInstanceState() callback to save other data to the bundle that you want to retain, even if the app was automatically shut down. To put data into the bundle, use the bundle methods that start with put, such as putInt().
+You can get data back out of the bundle in the onRestoreInstanceState() method, or more commonly in onCreate(). The onCreate() method has a savedInstanceState parameter that holds the bundle.
+If the savedInstanceState variable contains null, the activity was started without a state bundle and there is no state data to retrieve.
+To retrieve data from the bundle with a key, use the Bundle methods that start with get, such as getInt().
+Configuration changes
+A configuration change happens when the state of the device changes so radically that the easiest way for the system to resolve the change is to shut down and rebuild the activity.
+The most common example of a configuration change is when the user rotates the device from portrait to landscape mode, or from landscape to portrait mode. A configuration change can also occur when the device language changes or a hardware keyboard is plugged in.
+When a configuration change occurs, Android invokes all the activity lifecycle's shutdown callbacks. Then Android restarts the activity from scratch, running all the lifecycle startup callbacks.
+When Android shuts down an app because of a configuration change, it restarts the activity with the state bundle that is available to onCreate().
+As with process shutdown, save your app's state to the bundle in onSaveInstanceState().
