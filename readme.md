@@ -37,6 +37,35 @@ This codelab is part of the Android Kotlin Fundamentals course. All the course c
   - [5.3. desert-clicker app](#53-desert-clicker-app)
   - [5.4. Complex lifecycle](#54-complex-lifecycle)
     - [5.4.1. Turn DessertTimer into a LifecycleObserver](#541-turn-desserttimer-into-a-lifecycleobserver)
+    - [5.4.2. Modify the MainActivity](#542-modify-the-mainactivity)
+  - [5.5. onSaveInstanceState()](#55-onsaveinstancestate)
+    - [5.5.1. Use onSaveInstanceState() to save bundle data](#551-use-onsaveinstancestate-to-save-bundle-data)
+    - [5.5.2. Use onCreate() to restore bundle data](#552-use-oncreate-to-restore-bundle-data)
+  - [5.6. Summary](#56-summary)
+- [6. App architecture](#6-app-architecture)
+    - [6.0.1. screens/title/TitleFragment.kt](#601-screenstitletitlefragmentkt)
+    - [6.0.2. screens/game/GameFragment.kt](#602-screensgamegamefragmentkt)
+    - [6.0.3. screens/score/ScoreFragment.kt](#603-screensscorescorefragmentkt)
+    - [6.0.4. res/navigation/main_navigation.xml](#604-resnavigationmain_navigationxml)
+    - [6.0.5. Issues in the app:](#605-issues-in-the-app)
+  - [6.1. recap](#61-recap)
+    - [6.1.1. recap safe args](#611-recap-safe-args)
+    - [6.1.2. recap binding](#612-recap-binding)
+  - [6.2. UI Controller](#62-ui-controller)
+  - [6.3. ViewModel](#63-viewmodel)
+  - [6.4. ViewModelFactory](#64-viewmodelfactory)
+  - [6.5. Create the GameViewModel](#65-create-the-gameviewmodel)
+    - [6.5.1. Add the GameViewModel class](#651-add-the-gameviewmodel-class)
+    - [6.5.2. Override onClreared()](#652-override-onclreared)
+    - [6.5.3. Associate GameViewModel with the game fragment](#653-associate-gameviewmodel-with-the-game-fragment)
+    - [6.5.4. init the viewmodel](#654-init-the-viewmodel)
+    - [6.5.5. result](#655-result)
+  - [6.6. Populate the GameViewModel](#66-populate-the-gameviewmodel)
+    - [6.6.1. Move the data fields and data processing to the ViewModel](#661-move-the-data-fields-and-data-processing-to-the-viewmodel)
+    - [6.6.2. update references to click handler and data fields in GameFragment](#662-update-references-to-click-handler-and-data-fields-in-gamefragment)
+  - [6.7. implement click listerner for the end game button](#67-implement-click-listerner-for-the-end-game-button)
+  - [6.8. Use a ViewModelFactory](#68-use-a-viewmodelfactory)
+  - [6.9. Summary](#69-summary)
 
 
 # 2. Data binding basics (databinding app)
@@ -909,7 +938,6 @@ Timber uses the Application class because the whole app will be using this loggi
 
 When your app is in the background, it should not be actively running, to preserve system resources and battery life. You use the Activity lifecycle and its callbacks to know when your app is moving to the background so that you can pause any ongoing operations. Then you restart those operations when your app comes into the foreground.
 
-
 ## 5.2. fragmnet lifecycle
     
     override fun onAttach(context: Context) {
@@ -1066,7 +1094,7 @@ for example the `@OnLifecycleEvent(Lifecycle.Event.ON_START)` annotation indicat
     @OnLifecycleEvent(Lifecycle.Event.ON_STOP)
     fun stopTimer()
     
-### Modify the MainActivity
+### 5.4.2. Modify the MainActivity
 
 your mainactivity class is already a lifecycle owner through object-oriented inheritence. notice `MainActivity` sublcass from appcompatactivity which in turn subclasses from `FragmentActivity` since the fragment activity superclass imlemts theres nothing to do 
 all we need to do is pass the activity lifecycle object into the dessertime constructor
@@ -1077,7 +1105,7 @@ Open MainActivity. In the onCreate() method, modify the initialization of Desser
 
 DessertTimer is now observing the lifecycle itself and is automatically notified when the lifecycle state changes. All you do in these callbacks now is log a message.
 
-## onSaveInstanceState()
+## 5.5. onSaveInstanceState()
 
 What happens to your app and its data if Android shuts down that app while it is in the background? This tricky edge case is important to understand.
 
@@ -1103,7 +1131,7 @@ However, sometimes the Android OS doesn't know about all your data. For example,
 
 The `onSaveInstanceState`() method is the callback you use to save any data that you might need if the Android OS destroys your app. In the lifecycle callback diagram, onSaveInstanceState() is called **after the activity has been stopped**. It's called every time your app goes into the background.
 
-### Use onSaveInstanceState() to save bundle data
+### 5.5.1. Use onSaveInstanceState() to save bundle data
 
 
 In MainActivity, override the onSaveInstanceState() callback, and add a Timber log statement.
@@ -1127,7 +1155,7 @@ In onSaveInstanceState(), put the revenue value (an integer) into the bundle wit
 
     outState.putInt(KEY_REVENUE, revenue)
 
-### Use onCreate() to restore bundle data
+### 5.5.2. Use onCreate() to restore bundle data
 
 Add this code to onCreate(), after the DessertTimer setup:
 
@@ -1148,7 +1176,7 @@ The test for null determines whether there is data in the bundle, or if the bund
            savedInstanceState.getInt(KEY_TIMER_SECONDS, 0)
     }
 
-## Summary
+## 5.6. Summary
 
 Lifecycle tips
 If you set up or start something in a lifecycle callback, stop or remove that thing in the corresponding callback. By stopping the thing, you make sure it doesn't keep running when it's no longer needed. For example, if you set up a timer in onStart(), you need to pause or stop the timer in onStop().
@@ -1183,3 +1211,485 @@ The most common example of a configuration change is when the user rotates the d
 When a configuration change occurs, Android invokes all the activity lifecycle's shutdown callbacks. Then Android restarts the activity from scratch, running all the lifecycle startup callbacks.
 When Android shuts down an app because of a configuration change, it restarts the activity with the state bundle that is available to onCreate().
 As with process shutdown, save your app's state to the bundle in onSaveInstanceState().
+
+# 6. App architecture
+App architecture is a way of designing your apps' classes, and the relationships between them, such that the code is organized, performs well in particular scenarios, and is easy to work with
+The GuessTheWord app follows the separation of concerns design principle and is divided into classes, with each class addressing a separate concern. In this first codelab of the lesson, the classes you work with are a UI controller, a ViewModel, and a ViewModelFactory.
+
+### 6.0.1. screens/title/TitleFragment.kt
+The title fragment is the first screen that is displayed when the app is launched. A click handler is set to the Play button, to navigate to the game screen.
+
+### 6.0.2. screens/game/GameFragment.kt
+This is the main fragment, where most of the game's action takes place:
+
+- Variables are defined for the current word and the current score.
+- The wordList defined inside the resetList() method is a sample list of words to be used in the game.
+- The onSkip() method is the click handler for the Skip button. It decreases the score by 1, then displays the next word using the nextWord() method.
+- The onCorrect() method is the click handler for the Got It button. This method is implemented similarly to the onSkip() method. The only difference is that this method adds 1 to the score instead of subtracting.
+
+### 6.0.3. screens/score/ScoreFragment.kt
+ScoreFragment is the final screen in the game, and it displays the player's final score. In this codelab, you add the implementation to display this screen and show the final score.
+
+### 6.0.4. res/navigation/main_navigation.xml
+The navigation graph shows how the fragments are connected through navigation:
+
+- From the title fragment, the user can navigate to the game fragment.
+- From the game fragment, the user can navigate to the score fragment.
+- From the score fragment, the user can navigate back to the game fragment.
+
+### 6.0.5. Issues in the app:
+    
+-The starter app doesn't save and restore the app state during configuration changes, such as when the device orientation changes, or when the app shuts down and restarts.
+    You could resolve this issue using the onSaveInstanceState() callback. However, using the onSaveInstanceState() method requires you to write extra code to save the state in a bundle, and to implement the logic to retrieve that state. Also, the amount of data that can be stored is minimal.
+- The game screen does not navigate to the score screen when the user taps the End Game button.
+
+## 6.1. recap 
+
+### 6.1.1. recap safe args
+
+in app gradle
+
+     plugins 
+
+        id 'kotlin-kapt'
+        id 'androidx.navigation.safeargs'
+
+    buildFeatures {
+        dataBinding true
+    }
+
+
+    implementation 'androidx.navigation:navigation-fragment-ktx:2.3.3'
+    implementation 'androidx.navigation:navigation-ui-ktx:2.3.3'
+    
+project gradle 
+
+
+            classpath "androidx.navigation:navigation-safe-args-gradle-plugin:$navigationVersion"
+
+in fragment on create view
+
+    val binding:TitleFragmentBinding = DataBindingUtil.inflate(inflater, R.layout.title_fragment,container,false)
+    
+            binding.playGameButton.setOnClickListener {
+            // using safe args with arguments
+                findNavController().navigate(TitleFragmentDirections.actionTitleFragmentToGameFragment())
+            }
+            return binding.root
+        }
+
+
+for passing safe args
+
+    /**
+    * Called when the game is finished
+    */
+    private fun gameFinished() {
+       Toast.makeText(activity, "Game has just finished", Toast.LENGTH_SHORT).show()
+       val action = GameFragmentDirections.actionGameToScore()
+       action.score = viewModel.score
+       NavHostFragment.findNavController(this).navigate(action)
+    }
+    
+### 6.1.2. recap binding
+
+
+    // Contains all the views
+    private lateinit var binding: ActivityMainBinding
+    
+in on create()
+
+    // Use Data Binding to get reference to the views
+    binding = DataBindingUtil.setContentView(this, R.layout.activity_main)
+
+    binding.dessertButton.setOnClickListener {
+        onDessertClicked()
+    }
+    
+in xml
+
+    
+    <layout xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        xmlns:tools="http://schemas.android.com/tools">
+
+    <data>
+
+        <variable
+            name="revenue"
+            type="Integer" />
+
+        <variable
+            name="amountSold"
+            type="Integer" />
+    </data>
+    
+    ...    
+    android:text="@{amountSold.toString()}"
+
+## 6.2. UI Controller
+
+UI-based class such as Activity or Fragment . should only contain logic that hadles UI and OS interaction such as displaying views and capturing userinput. dont put desision making logic, such as logic that determines the text to disply into the UI controller
+
+the UI controller are the 3 fragments (gamefrag and scorefrag and the titlefragment)
+whem the user taps a button this information is passed to `GameViewModel`
+
+## 6.3. ViewModel
+holds data to be displayed in a fragment or activity associated with the `ViewModel` a viewmodel can do simple calculations and transformations on data to prepare the data to be displayed by UI controller. in this arch. the `ViewModel` aslo contains the business logic to perform simple calculations to decide what the current state of the data is 
+
+## 6.4. ViewModelFactory
+
+a `ViewModelFactor` instantiates `ViewModel` objects with or without constructor parameters
+
+![](.readme_images/2ace0228.png)
+
+## 6.5. Create the GameViewModel
+
+### 6.5.1. Add the GameViewModel class
+
+in gradle
+
+    implementation 'androidx.lifecycle:lifecycle-viewmodel-ktx:2.2.0'
+
+In the package screens/game/ folder, create a new Kotlin class called GameViewModel.
+    
+    class GameViewModel : ViewModel() {
+       init {
+           Log.i("GameViewModel", "GameViewModel created!")
+       }
+    }
+
+### 6.5.2. Override onClreared()
+
+the viewmodel is destroyed when the associated fragemnt s detached or when the activity is finished, right before the viewmodel is destroyed `onCleared()`is called to clean up the resources
+
+    override fun onCleared() {
+       super.onCleared()
+       Log.i("GameViewModel", "GameViewModel destroyed!")
+    }
+
+### 6.5.3. Associate GameViewModel with the game fragment
+
+a `ViewModel` needs to be associated with a ui controller to associate the 2 you create a reference to the vieww model inside the ui controller
+
+inside the `GameFragment` add 
+
+    private lateinit var viewModel: GameViewModel
+
+### 6.5.4. init the viewmodel
+during the configration changes such as screen rotations UI controller such as fragmetns are re-created. howerver `ViewModel` instance survives. if you create the `ViewModel` instace using the `ViewModel` class a new object is created every time the fragmetn is re-created, **instead** cerate the `ViewModel` instacnce usiong a `ViewModelProvider`
+
+![](.readme_images/a0e61b06.png)
+
+>Important: Always use ViewModelProvider to create ViewModel objects rather than directly instantiating an instance of ViewModel.
+
+how `ViewModelProvider` works
+- `viewmodelprovider` retunrs an existing `ViewModel` if one exists or it creates a new one if it does not already exisit
+- `viewmodelprovider` creates a `viewmodel` instanmce in association withg the given scopre (activity or frag)
+- the created `viewmodel` is retained as long as the scop is alive, ex: if the scope is a fragm the `ViewModel` is retained until the fragment is detached
+
+init the `ViewModel` using `ViewModelProvider.get()` methoid to create a `ViewModelProvider`
+
+in th `GameFragment` class init the `viewModel` variable. inside the oncreat and after the binding 
+
+    Log.i("GameFragment", "Called ViewModelProvider.get")
+    viewModel = ViewModelProvider(this).get(GameViewModel::class.java)
+
+
+### 6.5.5. result
+
+Run the app. In Android Studio, open the Logcat pane and filter on Game. Tap the Play button on your device or emulator. The game screen opens.
+- as show in the logcat the `onCreateView()` method of the `GameFragment` calls the `ViewModelProvider.get()` method to create the `GameViewModel`
+
+
+    I/GameFragment: Called ViewModelProvider.get
+    I/GameViewModel: GameViewModel created!
+    
+rotate the screeen the `GameFragment` is destroyed and re-created each time so the `ViewModelProvider.get()` is called each time but the `GameViewModel` is created only once
+
+when exiting the frag is destroyed and the `GameViewModel` is alos desctroyed
+
+
+## 6.6. Populate the GameViewModel
+
+the `ViewModel` survives configuration changes so its a good place for data that needs to survive configuration changes
+
+- put data to be displayed on the screen and code to process that data in the `ViewModel`
+- the `ViewModel` **should never contain reference to fragment or views** because activites do not survives configuration changes
+
+![](.readme_images/a783cfd1.png)
+
+For comparison, here's how the GameFragment UI data is handled in the starter app before you add ViewModel, and after you add ViewModel:
+
+- Before you add ViewModel: When the app goes through a configuration change such as a screen rotation, the game fragment is destroyed and re-created. The data is lost.
+- After you add ViewModel and move the game fragment's UI data into the ViewModel: All the data that the fragment needs to display is now the ViewModel. When the app goes through a configuration change, the ViewModel survives, and the data is retained.
+
+![](.readme_images/94b468eb.png)
+
+### 6.6.1. Move the data fields and data processing to the ViewModel
+
+Move the following data fields and methods from the GameFragment to the GameViewModel:
+
+1. Move the word, score, and wordList data fields. Make sure word and score are not private.
+Do not move the binding variable, GameFragmentBinding, because it contains references to the views. This variable is used to inflate the layout, set up the click listeners, and display the data on the screen—responsibilities of the fragment.
+
+2. Move the resetList() and nextWord() methods. These methods decide what word to show on the screen.
+3. From inside the onCreateView() method, move the method calls to resetList() and nextWord() to the init block of the GameViewModel.
+
+These methods must be in the init block, because you should reset the word list when the ViewModel is created, not every time the fragment is created. You can delete the log statement in the init block of GameFragment.
+
+The onSkip() and onCorrect() click handlers in the GameFragment contain code for processing the data and updating the UI. The code to update the UI should stay in the fragment, but the code for processing the data needs to be moved to the ViewModel.
+
+Copy the onSkip() and onCorrect() methods from the GameFragment to the GameViewModel.
+In the GameViewModel, make sure the onSkip() and onCorrect() methods are not private, because you will reference these methods from the fragment
+
+`GameViewModel`
+    
+    class GameViewModel : ViewModel() {
+       // The current word
+       var word = ""
+       // The current score
+       var score = 0
+       // The list of words - the front of the list is the next word to guess
+       private lateinit var wordList: MutableList<String>
+    
+       /**
+        * Resets the list of words and randomizes the order
+        */
+       private fun resetList() {
+           wordList = mutableListOf(
+                   "queen",
+                   "hospital",
+                   "basketball",
+                   "cat",
+                   "change",
+                   "snail",
+                   "soup",
+                   "calendar",
+                   "sad",
+                   "desk",
+                   "guitar",
+                   "home",
+                   "railway",
+                   "zebra",
+                   "jelly",
+                   "car",
+                   "crow",
+                   "trade",
+                   "bag",
+                   "roll",
+                   "bubble"
+           )
+           wordList.shuffle()
+       }
+    
+       init {
+           resetList()
+           nextWord()
+           Log.i("GameViewModel", "GameViewModel created!")
+       }
+       /**
+        * Moves to the next word in the list
+        */
+       private fun nextWord() {
+           if (!wordList.isEmpty()) {
+               //Select and remove a word from the list
+               word = wordList.removeAt(0)
+           }
+           updateWordText()
+           updateScoreText()
+       }
+     /** Methods for buttons presses **/
+       fun onSkip() {
+           score--
+           nextWord()
+       }
+    
+       fun onCorrect() {
+           score++
+           nextWord()
+       }
+    
+       override fun onCleared() {
+           super.onCleared()
+           Log.i("GameViewModel", "GameViewModel destroyed!")
+       }
+    }
+    
+Here is the code for the GameFragment class, after refactoring:
+    
+    
+    /**
+    * Fragment where the game is played
+    */
+    class GameFragment : Fragment() {
+    
+    
+       private lateinit var binding: GameFragmentBinding
+    
+    
+       private lateinit var viewModel: GameViewModel
+    
+    
+       override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
+                                 savedInstanceState: Bundle?): View? {
+    
+           // Inflate view and obtain an instance of the binding class
+           binding = DataBindingUtil.inflate(
+                   inflater,
+                   R.layout.game_fragment,
+                   container,
+                   false
+           )
+    
+           Log.i("GameFragment", "Called ViewModelProvider.get")
+           viewModel = ViewModelProvider(this).get(GameViewModel::class.java)
+    
+           binding.correctButton.setOnClickListener { onCorrect() }
+           binding.skipButton.setOnClickListener { onSkip() }
+           updateScoreText()
+           updateWordText()
+           return binding.root
+    
+       }
+    
+    
+       /** Methods for button click handlers **/
+    
+       private fun onSkip() {
+           score--
+           nextWord()
+       }
+    
+       private fun onCorrect() {
+           score++
+           nextWord()
+       }
+    
+    
+       /** Methods for updating the UI **/
+    
+       private fun updateWordText() {
+           binding.wordText.text = word
+       }
+    
+       private fun updateScoreText() {
+           binding.scoreText.text = score.toString()
+       }
+    }
+
+### 6.6.2. update references to click handler and data fields in GameFragment
+
+in the `GameFragment` update the `onSkip()` and onCorrect() Remove the code to update the score and instead call the corresponding onSkip() and onCorrect() methods on viewModel.
+Because you moved the nextWord() method to the ViewModel, the game fragment can no longer access it.
+In `GameFragment`, in the onSkip() and onCorrect() methods, replace the call to nextWord() with updateScoreText() and updateWordText(). These methods display the data on the screen.
+
+    private fun onSkip() {
+       viewModel.onSkip()
+       updateWordText()
+       updateScoreText()
+    }
+    private fun onCorrect() {
+       viewModel.onCorrect()
+       updateScoreText()
+       updateWordText()
+    }
+
+In the GameFragment, update the score and word variables to use the GameViewModel variables, because these variables are now in the GameViewModel.
+
+    private fun updateWordText() {
+       binding.wordText.text = viewModel.word
+    }
+    
+    private fun updateScoreText() {
+       binding.scoreText.text = viewModel.score.toString()
+    }
+
+>Reminder: Because the app's activities, fragments and views do not survive configuration changes, the ViewModel should not contain references to the app's activities, fragments, or views.
+
+ the GameViewModel, inside the nextWord() method, remove the calls to the updateWordText() and updateScoreText() methods. These methods are now being called from the GameFragment
+ 
+ ## 6.7. implement click listerner for the end game button 
+
+in GameFrag add method called `onEndGame` when user tap 
+
+    private fun onEndGame() {
+    gameFinished()
+       }
+       
+       binding.endGameButton.setOnClickListener { onEndGame() }
+    
+       
+    /**
+    * Called when the game is finished
+    */
+    private fun gameFinished() {
+       Toast.makeText(activity, "Game has just finished", Toast.LENGTH_SHORT).show()
+       val action = GameFragmentDirections.actionGameToScore()
+       action.score = viewModel.score
+       NavHostFragment.findNavController(this).navigate(action)
+    }
+   
+   
+## 6.8. Use a ViewModelFactory
+
+When the user ends the game the `ScoreFragment` does not show the score you want a ViewModel to hold the score to be discplayed by the scorefrag. you'll pass thew score value during the view model init using the `Factory Method Pattern`
+
+The factory method pattern is a `creational design pattern` that uses factory methoids to create obejcts. 
+**A factory method is a method that return an intacne of the same class**
+
+in this tassk you fcreate a ViewModel with a parametierzed constructor for the score fcragment 
+
+1. under the score create a new kotlin class call `ScoreViewModel`
+2. extend the `ScoreViewModel` class from ViewModel add a constructor for the final score 
+3. in the `ScoreViewModel` classs add a variable called `score`
+
+
+    class ScoreViewModel(finalScore: Int) : ViewModel() {
+       // The final score
+       var score = finalScore
+       init {
+           Log.i("ScoreViewModel", "Final score is $finalScore")
+       }
+    }
+
+anoter class
+
+    class ScoreViewModelFactory(private val finalScore: Int) : ViewModelProvider.Factory {
+        override fun <T : ViewModel?> create(modelClass: Class<T>): T {
+           if (modelClass.isAssignableFrom(ScoreViewModel::class.java)) {
+               return ScoreViewModel(finalScore) as T
+           }
+           throw IllegalArgumentException("Unknown ViewModel class")
+        }
+    }
+    
+In ScoreFragment, create class variables for ScoreViewModel and ScoreViewModelFactory.
+
+    private lateinit var viewModel: ScoreViewModel
+    private lateinit var viewModelFactory: ScoreViewModelFactory
+    
+    
+    viewModelFactory = ScoreViewModelFactory(ScoreFragmentArgs.fromBundle(arguments!!).score)
+    viewModel = ViewModelProvider(this, viewModelFactory)
+           .get(ScoreViewModel::class.java)
+           
+## 6.9. Summary
+
+- app arch guidelines recommend seperating classes that have different responsibitlies
+- ui controller is UI based class like `activity` or `Fragment`. UI controllers shoudl only contain logic that handles UI and Operating system interactions, they should't contain data to be display in the UI. **put data in a ViewModel**
+- the ViewModel class stores and manages UI-related data. the `ViewModel` class allows data to survive configuration changes such as screen rotations
+- `ViewModel` is one of the recommended android arch comp
+- `ViewModelProvider.Factory` is an interface you can use to create a `ViewModel` object
+
+UI controller | ViewModel
+---------------|----------
+an example of a UIcontroller is the `ScoreFragment` | an example of a ViewModel is `ScoreViewModel`
+dosen't contain any data to be displayed in the UI | contains data that the UI controller displays in the UI
+contains code for displaying data and user-event code such as click listener | contains code for data processing
+destroyed and re-created during every configuration change | destroyed only when the associated UI controller goes away perman, for an activity when the activity finishes or for frag when frag is detached
+contains views| should never contain referecnes to activies frag or vierws becasue they dont survive configuration changes but the ViewModel does
+contains ref to the associated ViewModel | dosnet contian refernce to the associated UI controller
+
+
+ 

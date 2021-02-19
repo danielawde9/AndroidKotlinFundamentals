@@ -1,3 +1,4 @@
+include ':guesstheword'
 include ':dessertclicker'
 include ':navigationapp'
 rootProject.name = "AndroidKotlinFundamentals"
