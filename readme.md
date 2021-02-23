@@ -66,13 +66,14 @@ This codelab is part of the Android Kotlin Fundamentals course. All the course c
   - [6.7. implement click listerner for the end game button](#67-implement-click-listerner-for-the-end-game-button)
   - [6.8. Use a ViewModelFactory](#68-use-a-viewmodelfactory)
   - [6.9. Summary](#69-summary)
-- [LiveData and Live Data Observers](#livedata-and-live-data-observers)
-  - [LiveData](#livedata)
-    - [change the score and word to user livedata](#change-the-score-and-word-to-user-livedata)
-    - [update the LiveData object reference](#update-the-livedata-object-reference)
-  - [LiveData Observers](#livedata-observers)
-  - [Encapsulate the LiveData](#encapsulate-the-livedata)
-  - [](#)
+- [7. LiveData and Live Data Observers](#7-livedata-and-live-data-observers)
+  - [7.1. LiveData](#71-livedata)
+    - [7.1.1. change the score and word to user livedata](#711-change-the-score-and-word-to-user-livedata)
+    - [7.1.2. update the LiveData object reference](#712-update-the-livedata-object-reference)
+  - [7.2. LiveData Observers](#72-livedata-observers)
+  - [7.3. Encapsulate the LiveData](#73-encapsulate-the-livedata)
+  - [7.4. Add a backing property](#74-add-a-backing-property)
+  - [7.5. adding a game-finished event](#75-adding-a-game-finished-event)
 
 
 # 2. Data binding basics (databinding app)
@@ -1698,14 +1699,14 @@ destroyed and re-created during every configuration change | destroyed only when
 contains views| should never contain referecnes to activies frag or vierws becasue they dont survive configuration changes but the ViewModel does
 contains ref to the associated ViewModel | dosnet contian refernce to the associated UI controller
 
-# LiveData and Live Data Observers
+# 7. LiveData and Live Data Observers
 
 
 In the previous codelab, you used a ViewModel in the GuessTheWord app to allow the app's data to survive device-configuration changes. In this codelab, you learn how to integrate LiveData with the data in the ViewModel classes. LiveData, which is one of the Android Architecture Components, lets you build data objects that notify views when the underlying database changes.
 
 to use LiveData class you set up observers for examples (activites or fragments) that observes changes in the app's data. live data is life-cycle awar so its only updates app-component observers that are in an active lifecycle state
 
-## LiveData 
+## 7.1. LiveData 
 
 LiveData is an observable data holder class that is lifecycle-aware. ex: you can wrap a livedata around the current score in the Guesstheword app 
 - `LiveData` is observable which means that an observer is notifies when the data held by the `LiveData` object changes
@@ -1714,7 +1715,7 @@ LiveData is an observable data holder class that is lifecycle-aware. ex: you can
 
 we will convert the data inside the GameViewModel to LiveData. then we will add observer to the LiveData and observe them 
 
-### change the score and word to user livedata
+### 7.1.1. change the score and word to user livedata
 Mutable live data is data that can be changed
 
      // The current word
@@ -1731,7 +1732,7 @@ In GameViewModel, inside the init block, initialize score and word. To change th
       ...
     }
     
-### update the LiveData object reference
+### 7.1.2. update the LiveData object reference
 
 The score and word variables are now of the type LiveData. In this step, you change the references to these variables, using the value property.
 
@@ -1772,7 +1773,7 @@ In GameFragment, inside the gameFinished() method, change the reference to viewM
 
 Make sure there are no errors in your code. Compile and run your app. The app's functionality should be the same as it was before.  
 
-## LiveData Observers
+## 7.2. LiveData Observers
 
 we attach the observer objects to those `LiveData` we will use the fragment view `viewLifecycleOwner` as the lifecycle owner
 
@@ -1796,7 +1797,7 @@ when the value of score or the word changes the value will be displahyen on the 
 In GameFragment, delete the methods updateWordText() and updateScoreText(), and all references to them. You don't need them anymore, because the text views are updated by the LiveData observer methods.
 Run your app. Your game app should work exactly as before, but now it uses LiveData and LiveData observers.
 
-## Encapsulate the LiveData
+## 7.3. Encapsulate the LiveData
 Encapsulation is a way to restrict direct access to some of an object's field. When you encapsulate an object you expose a set of public methos that meodify the private internal feilds. Using encapsulation you control how other classes manipulate these internal fields.
 
 In the current code, any external class can modify `score` and `word` vairables using the `value` property ex: viewModel.score.value. it might not matter in the app now, but in production yes
@@ -1810,7 +1811,7 @@ only the `viewModel` should edit the data in your app. but UI controllers need t
   
 to carry out this strategy we use a Kotlin `backing propertey` **a backing property** allows you to return somethins from a getter other than the exact object. in this task we will implement a backing property for the `score` and `word` objects
 
-## Add a backing property 
+## 7.4. Add a backing property 
 
 1. in `GameViewModel` make the current `score` object private
 2. to follow the naming convention used in backing properties change `score` to`_score` 
@@ -1870,5 +1871,5 @@ the mutable (that can be change) is now private (_score and _word)
 and the public LiveData will get their value from _word
 
 
-## adding a game-finished event 
+## 7.5. adding a game-finished event 
 current app navigates to the score screen when the user taps the End Game button. we wnat also to naviagte to the score screen when the playes have cycled through all the words.
