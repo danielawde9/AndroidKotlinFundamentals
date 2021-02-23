@@ -66,6 +66,13 @@ This codelab is part of the Android Kotlin Fundamentals course. All the course c
   - [6.7. implement click listerner for the end game button](#67-implement-click-listerner-for-the-end-game-button)
   - [6.8. Use a ViewModelFactory](#68-use-a-viewmodelfactory)
   - [6.9. Summary](#69-summary)
+- [LiveData and Live Data Observers](#livedata-and-live-data-observers)
+  - [LiveData](#livedata)
+    - [change the score and word to user livedata](#change-the-score-and-word-to-user-livedata)
+    - [update the LiveData object reference](#update-the-livedata-object-reference)
+  - [LiveData Observers](#livedata-observers)
+  - [Encapsulate the LiveData](#encapsulate-the-livedata)
+  - [](#)
 
 
 # 2. Data binding basics (databinding app)
@@ -1691,5 +1698,177 @@ destroyed and re-created during every configuration change | destroyed only when
 contains views| should never contain referecnes to activies frag or vierws becasue they dont survive configuration changes but the ViewModel does
 contains ref to the associated ViewModel | dosnet contian refernce to the associated UI controller
 
+# LiveData and Live Data Observers
 
- 
+
+In the previous codelab, you used a ViewModel in the GuessTheWord app to allow the app's data to survive device-configuration changes. In this codelab, you learn how to integrate LiveData with the data in the ViewModel classes. LiveData, which is one of the Android Architecture Components, lets you build data objects that notify views when the underlying database changes.
+
+to use LiveData class you set up observers for examples (activites or fragments) that observes changes in the app's data. live data is life-cycle awar so its only updates app-component observers that are in an active lifecycle state
+
+## LiveData 
+
+LiveData is an observable data holder class that is lifecycle-aware. ex: you can wrap a livedata around the current score in the Guesstheword app 
+- `LiveData` is observable which means that an observer is notifies when the data held by the `LiveData` object changes
+- `LiveData` hold data; `LiveData` is a wrapper that can be used with any data
+- `LiveData` is livecycle-aware. when you attach an observer to the LiveData the observer associated woth a `LifecycleOwner` usually act or frag the live Data only updates observers that are in active lifecycle state ssuch as `STARTED` or `RESUMED`
+
+we will convert the data inside the GameViewModel to LiveData. then we will add observer to the LiveData and observe them 
+
+### change the score and word to user livedata
+Mutable live data is data that can be changed
+
+     // The current word
+     val word = MutableLiveData<String>()
+     // The current score
+     val score = MutableLiveData<Int>()
+     
+In GameViewModel, inside the init block, initialize score and word. To change the value of a LiveData variable, you use the setValue() method on the variable. In Kotlin, you can call setValue() using the value property.
+
+    init {
+    
+       word.value = ""
+       score.value = 0
+      ...
+    }
+    
+### update the LiveData object reference
+
+The score and word variables are now of the type LiveData. In this step, you change the references to these variables, using the value property.
+
+- in `GameViewModel` in onskip methode change the score to score.value
+- to resolve the error add a null check to score.value onskip() the call the minus() function on score which perform the substraction null-safety
+
+
+    fun onSkip() {
+       score.value = (score.value)?.minus(1)
+       nextWord()
+    }
+    
+    fun onCorrect() {
+       score.value = (score.value)?.plus(1)
+       nextWord()
+    }
+    private fun nextWord() {
+       if (!wordList.isEmpty()) {
+           //Select and remove a word from the list
+           word.value = wordList.removeAt(0)
+       }
+    }
+    
+In `GameFragment` inside the updatewordtext, change the referecne to viewModel.word add .value
+
+    private fun updateScoreText() {
+       binding.scoreText.text = viewModel.score.value.toString()
+    }
+    
+In GameFragment, inside the gameFinished() method, change the reference to viewModel.score to viewModel.score.value. Add the required null-safety check.
+
+    private fun gameFinished() {
+       Toast.makeText(activity, "Game has just finished", Toast.LENGTH_SHORT).show()
+       val action = GameFragmentDirections.actionGameToScore()
+       action.score = viewModel.score.value?:0
+       NavHostFragment.findNavController(this).navigate(action)
+    }
+
+Make sure there are no errors in your code. Compile and run your app. The app's functionality should be the same as it was before.  
+
+## LiveData Observers
+
+we attach the observer objects to those `LiveData` we will use the fragment view `viewLifecycleOwner` as the lifecycle owner
+
+>why viewLifecycleOwner
+>fragment views get destroyed when a user navigates away from a fragm, even though the fagm itseft is not destroy. this essentially creates 2 lifecycles. for the frag and for the frag views. referring to the frag lifecycle instead of the view of the frag can cause subtle bugs when update the frag view. THerefore when setting up observers that affect the frag view you shou
+>1. set up the obererves in onCreateView()
+>2. pass viewLifecycleOwner to obersers
+
+in GameFragment inside the onCreateView() attach an observer to the livedata object for the current score viewModel.score.observe using a lmabda expression (lambda expression is an anonymous fuction that isnt declared but is passed immediately as an expression)
+
+    
+    viewModel.score.observe(viewLifecycleOwner, Observer { newScore ->
+           binding.scoreText.text = newScore.toString()
+    })
+    viewModel.word.observe(viewLifecycleOwner, Observer { newWord ->
+       binding.wordText.text = newWord
+    })
+
+when the value of score or the word changes the value will be displahyen on the screem amd updates autmactical
+
+In GameFragment, delete the methods updateWordText() and updateScoreText(), and all references to them. You don't need them anymore, because the text views are updated by the LiveData observer methods.
+Run your app. Your game app should work exactly as before, but now it uses LiveData and LiveData observers.
+
+## Encapsulate the LiveData
+Encapsulation is a way to restrict direct access to some of an object's field. When you encapsulate an object you expose a set of public methos that meodify the private internal feilds. Using encapsulation you control how other classes manipulate these internal fields.
+
+In the current code, any external class can modify `score` and `word` vairables using the `value` property ex: viewModel.score.value. it might not matter in the app now, but in production yes
+
+only the `viewModel` should edit the data in your app. but UI controllers need to read the data. so the data fields cant be completely privae. to encapsulate your apps data. you use both `MutableLiveData` and `LiveData` objects
+
+`MutableLiveData` vs `LiveData`:
+
+- Data in a `MutableLiveData` object can be changed as teh name implies. inside the `ViewModel` the data should be editable so it uses `MutableLiveData`
+- Data in a `LiveData` object can be read but not changes. From outside the `ViewModel` data should be readable. but not editable so the data should be exposed as `LiveData`
+  
+to carry out this strategy we use a Kotlin `backing propertey` **a backing property** allows you to return somethins from a getter other than the exact object. in this task we will implement a backing property for the `score` and `word` objects
+
+## Add a backing property 
+
+1. in `GameViewModel` make the current `score` object private
+2. to follow the naming convention used in backing properties change `score` to`_score` 
+3. Create a public version of the LiveData type, called score.
+
+
+    // The current score
+    private val _score = MutableLiveData<Int>()
+    val score: LiveData<Int>
+
+4. there will be an initialization error. this error happens because inside the `GameFragment` the `score` is a LiveData reference and score can no longer access its setter.
+to resolve this errror orrverride the `get()` methode for the score object in `GameViewMOdel` and return the backing property `_score`
+
+
+    val score: LiveData<Int>
+       get() = _score
+    
+    init {
+       ...
+       _score.value = 0
+       ...
+    }
+    
+    ...
+    fun onSkip() {
+       _score.value = (score.value)?.minus(1)
+      ...
+    }
+    
+    fun onCorrect() {
+       _score.value = (score.value)?.plus(1)
+       ...
+    }
+    
+aslo for word 
+       
+       // The current word
+       private val _word = MutableLiveData<String>()
+       val word: LiveData<String>
+          get() = _word
+       ...
+       init {
+          _word.value = ""
+          ...
+       }
+       ...
+       private fun nextWord() {
+          if (!wordList.isEmpty()) {
+              //Select and remove a word from the list
+              _word.value = wordList.removeAt(0)
+          }
+       }
+
+now we encapsulated `LiveData` objects `word` and `score`
+
+the mutable (that can be change) is now private (_score and _word)
+and the public LiveData will get their value from _word
+
+
+## adding a game-finished event 
+current app navigates to the score screen when the user taps the End Game button. we wnat also to naviagte to the score screen when the playes have cycled through all the words.

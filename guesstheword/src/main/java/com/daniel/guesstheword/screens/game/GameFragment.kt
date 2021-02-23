@@ -8,6 +8,7 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.fragment.NavHostFragment
 import com.daniel.guesstheword.R
@@ -40,19 +41,28 @@ class GameFragment : Fragment() {
         Log.i("GameFragment", "Called ViewModelProvider.get")
         viewModel = ViewModelProvider(this).get(GameViewModel::class.java)
 
+        viewModel.score.observe(viewLifecycleOwner, Observer { newScore ->
+            
+            binding.scoreText.text = newScore.toString()
+        })
+
+        viewModel.word.observe( viewLifecycleOwner, Observer{ newWord->
+            binding.wordText.text = newWord
+        })
 
 
         binding.correctButton.setOnClickListener { onCorrect() }
         binding.skipButton.setOnClickListener { onSkip() }
         binding.endGameButton.setOnClickListener { onEndGame() }
 
-        updateScoreText()
-        updateWordText()
+//        not needed after updating the live data observer
+//        updateScoreText()
+//        updateWordText()
 
         return binding.root
     }
 
-    /**
+    /** not needed afer adding the view model
      * Resets the list of words and randomizes the order
 
 
@@ -101,25 +111,25 @@ class GameFragment : Fragment() {
     private fun onSkip() {
         viewModel.onSkip()
 
-        updateScoreText()
-        updateWordText()
+//        updateScoreText()
+//        updateWordText()
     }
 
     private fun onCorrect() {
         viewModel.onCorrect()
-        updateWordText()
-        updateScoreText()
+//        updateWordText()
+//        updateScoreText()
     }
 
 
 
 
     /** Methods for updating the UI **/
-
+//        not needed after updating the live data observer
     private fun updateWordText() {
-        binding.wordText.text = viewModel.word
+        binding.wordText.text = viewModel.word.value.toString()
     }
-
+//        not needed after updating the live data observer
     private fun updateScoreText() {
         binding.scoreText.text = viewModel.score.toString()
     }
@@ -131,7 +141,7 @@ class GameFragment : Fragment() {
     private fun gameFinished(){
         Toast.makeText(activity, "game finishde",Toast.LENGTH_LONG).show()
         val action = GameFragmentDirections.actionGameFragmentToScoreFragment()
-        action.score = viewModel.score
+        action.score = viewModel.score.value?:0
         NavHostFragment.findNavController(this).navigate(action)
     }
 }
