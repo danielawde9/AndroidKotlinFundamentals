@@ -74,6 +74,19 @@ This codelab is part of the Android Kotlin Fundamentals course. All the course c
   - [7.3. Encapsulate the LiveData](#73-encapsulate-the-livedata)
   - [7.4. Add a backing property](#74-add-a-backing-property)
   - [7.5. adding a game-finished event](#75-adding-a-game-finished-event)
+  - [7.6. The observer pattern](#76-the-observer-pattern)
+  - [7.7. Use the LiveData to detect a game-finished event](#77-use-the-livedata-to-detect-a-game-finished-event)
+  - [7.8. reset the game-finsihed event](#78-reset-the-game-finsihed-event)
+  - [7.9. add play again button](#79-add-play-again-button)
+  - [7.10. Summary](#710-summary)
+    - [7.10.1. LiveData](#7101-livedata)
+    - [7.10.2. To add LiveData](#7102-to-add-livedata)
+    - [7.10.3. MutableLiveData](#7103-mutablelivedata)
+    - [7.10.4. To encapsulate LiveData](#7104-to-encapsulate-livedata)
+    - [7.10.5. Observable LiveDat](#7105-observable-livedat)
+  - [Code Review](#code-review)
+    - [Title Fragment](#title-fragment)
+    - [GameFragment](#gamefragment)
 
 
 # 2. Data binding basics (databinding app)
@@ -1347,7 +1360,7 @@ holds data to be displayed in a fragment or activity associated with the `ViewMo
 
 ## 6.4. ViewModelFactory
 
-a `ViewModelFactor` instantiates `ViewModel` objects with or without constructor parameters
+a `ViewModelFactory` instantiates `ViewModel` objects with or without constructor parameters
 
 ![](.readme_images/2ace0228.png)
 
@@ -1873,3 +1886,528 @@ and the public LiveData will get their value from _word
 
 ## 7.5. adding a game-finished event 
 current app navigates to the score screen when the user taps the End Game button. we wnat also to naviagte to the score screen when the playes have cycled through all the words.
+
+to implment this functionality, you need an event to be triggered and communicated to the fragment from the `ViewModel` when all the words have been shown. we use the `LiveData` observer pattern to model a game-finished event
+
+## 7.6. The observer pattern
+
+the obserer pattern is a software design patter, it specifies communication between objects: an **observable** (the "subject" of observation) and **observers**
+
+An observable is an object that notifies observer about the changes in its state
+
+![](.readme_images/47467851.png)
+
+inthe case of `LiveData` in this app the observable (subject) is the `LiveData` object, and the observers are the methos in the UI controllers such as fragment. a stat change happens whenever the data wrapper inside the `LiveData` changes. the LiveData classes are crucial in communication from the `ViewModel` to the fragment 
+
+## 7.7. Use the LiveData to detect a game-finished event 
+in this task, we use the `LiveData` oberser patter to model a game-finished event,
+
+1. in `GameViewModel` create a Boolean MutableLiveData object called `_eventGameFinished`. this object will hold the game-finsihed event 
+2. after initializing the `_eventGameFinished` object create and initialize a backing property called `eventGameFinish`
+
+
+    private val _eventGameFinish = MutableLiveData<Boolean>()
+        val eventGameFinish: LiveData<Boolean>
+            get() = _eventGameFinish
+
+3. In GameViewModel, add an onGameFinish() method. In the method, set the game-finished event, eventGameFinish, to true.
+  
+      
+      /** Method for the game completed event **/
+      fun onGameFinish() {
+         _eventGameFinish.value = true
+      }
+            
+4. n GameViewModel, inside the nextWord() method, end the game if the word list is empty.
+   
+   
+       private fun nextWord() {
+          if (wordList.isEmpty()) {
+              onGameFinish()
+          } else {
+              //Select and remove a _word from the list
+              _word.value = wordList.removeAt(0)
+          }
+       }
+       
+in short what we did 
+
+created a private mutable object of boolean and has a backing property (getter from otther object), this will set the mutbale value to true if the wordlist is empty
+
+
+the code we added has a lifecycle issue, if we comment the navigation code in the gameFinsihed() method, after rotating the toast keep popong 
+
+
+## 7.8. reset the game-finsihed event 
+
+usually LiveData delivers updates to the observer only the data changes. an excption to this behavios is that ovserver also receve updates when the oberver changes from an inactive to active stat
+
+this is why the gamefinised toast is triggered repeategly in the app. when the game fragment is re-creaeted after a screen rotaion it moves from an inactive state to an active state. the observer in the fragment is re-connected to the exsiting ViewModel and receives the cirrent daa. the gameFinished() method os re-triggered and the toeast displasys 
+
+we will fix the display issue by restting the eventGameFinsish flas in the GameViewModel
+
+
+1. in GameViewModel add an onGameFinishComplete() method to reset the game finsihde event _eventGameFisnihs
+
+
+    /** Method for the game completed event **/
+    
+    fun onGameFinishComplete() {
+       _eventGameFinish.value = false
+    }
+
+2. in the GameFragment at the end of `gameFinished()` call the `onGameFinishComplete()` on the `viewModel` object
+
+
+    private fun gameFinished() {
+       Toast.makeText(activity, "Game has just finished", Toast.LENGTH_SHORT).show()
+       val action = GameFragmentDirections.actionGameToScore()
+       action.score = viewModel.score.value?:0
+       findNavController(this).navigate(action)
+       viewModel.onGameFinishComplete()
+    }
+
+
+in this task you change the score to a `LiveData` object in the `ScoreViewModel` and attach an observer to it.
+This task is similar to what you did when you added `LiveData` to the GameViewModel
+
+You make these changes to `ScoreVeiwModel` for completeness so that all the data in you app uses `LiveData`
+
+1. in `ScoreVIewModel` change the score variable to type MutableLiveData. rename it by convention to _socre and add a backing property 
+
+
+    private val _score = MutableLiveData<Int>()
+    val score: LiveData<Int>
+       get() = _score
+    init {
+       _score.value = finalScore
+    }
+    
+2. In ScoreFragment, inside onCreateView(), after initializing the viewModel, attach an observer for the score LiveData object. Inside the lambda expression, set the score value to the score text view. Remove the code that directly assigns the text view with the score value from the ViewModel.
+
+Code to add:
+
+    
+    // Add observer for score
+    viewModel.score.observe(viewLifecycleOwner, Observer { newScore ->
+       binding.scoreText.text = newScore.toString()
+    })
+
+Code to remove:
+
+    binding.scoreText.text = viewModel.score.toString()
+    
+## 7.9. add play again button
+
+in this task we add a play aagin button to the score screen and implement its click listerner using a LiveData event. the button triggers an event to navigate from the score scren to the game screen 
+
+the starter code for the app includes the Play Again button, but the button is hidden so add visibitly 
+
+in the scoreviewmodel add a live data object to hold a booleard called _eventPlayAgain this objecvt os ued to save the LiveData event to navigate from the score screen to the game screen 
+
+    private val _eventPlayAgain = MutableLiveData<Boolean>()
+    val eventPlayAgain: LiveData<Boolean>
+       get() = _eventPlayAgain
+    
+    fun onPlayAgain() {
+       _eventPlayAgain.value = true
+    }
+    fun onPlayAgainComplete() {
+       _eventPlayAgain.value = false
+    }
+in score fragm
+
+    // Navigates back to game when button is pressed
+    viewModel.eventPlayAgain.observe(viewLifecycleOwner, Observer { playAgain ->
+       if (playAgain) {
+          findNavController().navigate(ScoreFragmentDirections.actionRestart())
+           viewModel.onPlayAgainComplete()
+       }
+    })
+    binding.playAgainButton.setOnClickListener {  viewModel.onPlayAgain()  }
+
+## Summary 
+
+App architecture is a way of designing your apps' classes, and the relationships between them, such that the code is organized, performs well in particular scenarios, and is easy to work with
+The GuessTheWord app follows the separation of concerns design principle and is divided into classes, with each class addressing a separate concern. In this first codelab of the lesson, the classes you work with are a UI controller, a ViewModel, and a ViewModelFactory.
+
+### UI Controller
+    
+UI-based class such as Activity or Fragment . should only contain logic that hadles UI and OS interaction such as displaying views and capturing userinput. dont put desision making logic, such as logic that determines the text to disply into the UI controller
+
+the UI controller are the 3 fragments (gamefrag and scorefrag and the titlefragment)
+whem the user taps a button this information is passed to `GameViewModel`
+
+
+### ViewModel
+holds data to be displayed in a fragment or activity associated with the `ViewModel` a viewmodel can do simple calculations and transformations on data to prepare the data to be displayed by UI controller. in this arch. the `ViewModel` aslo contains the business logic to perform simple calculations to decide what the current state of the data is 
+
+the viewmodel is destroyed when the associated fragemnt s detached or when the activity is finished, right before the viewmodel is destroyed `onCleared()`is called to clean up the resources
+
+    override fun onCleared() {
+       super.onCleared()
+       Log.i("GameViewModel", "GameViewModel destroyed!")
+    }
+
+
+### ViewModelFactory
+
+a `ViewModelFactory` instantiates `ViewModel` objects with or without constructor parameters
+
+![](.readme_images/2ace0228.png)
+
+The factory method pattern is a `creational design pattern` that uses factory methoids to create obejcts. 
+**A factory method is a method that return an intacne of the same class**
+
+in this tassk you fcreate a ViewModel with a parametierzed constructor for the score fcragment 
+
+### verride onClreared()
+    
+the viewmodel is destroyed when the associated fragemnt s detached or when the activity is finished, right before the viewmodel is destroyed `onCleared()`is called to clean up the resources
+    
+        override fun onCleared() {
+           super.onCleared()
+           Log.i("GameViewModel", "GameViewModel destroyed!")
+        }
+
+###  Associate GameViewModel with the game fragment
+    
+a `ViewModel` needs to be associated with a ui controller to associate the 2 you create a reference to the vieww model inside the ui controller
+
+inside the `GameFragment` add 
+    
+        private lateinit var viewModel: GameViewModel
+        
+        
+### init the viewmodel
+during the configration changes such as screen rotations UI controller such as fragmetns are re-created. howerver `ViewModel` instance survives. if you create the `ViewModel` instace using the `ViewModel` class a new object is created every time the fragmetn is re-created, **instead** cerate the `ViewModel` instacnce usiong a `ViewModelProvider`
+
+![](.readme_images/a0e61b06.png)
+
+>Important: Always use ViewModelProvider to create ViewModel objects rather than directly instantiating an instance of ViewModel.
+
+how `ViewModelProvider` works
+- `viewmodelprovider` retunrs an existing `ViewModel` if one exists or it creates a new one if it does not already exisit
+- `viewmodelprovider` creates a `viewmodel` instanmce in association withg the given scopre (activity or frag)
+- the created `viewmodel` is retained as long as the scop is alive, ex: if the scope is a fragm the `ViewModel` is retained until the fragment is detached
+
+init the `ViewModel` using `ViewModelProvider.get()` methoid to create a `ViewModelProvider`
+
+in th `GameFragment` class init the `viewModel` variable. inside the oncreat and after the binding 
+
+    Log.i("GameFragment", "Called ViewModelProvider.get")
+    viewModel = ViewModelProvider(this).get(GameViewModel::class.java)
+
+### Populate the GameViewModel
+
+the `ViewModel` survives configuration changes so its a good place for data that needs to survive configuration changes
+
+- put data to be displayed on the screen and code to process that data in the `ViewModel`
+- the `ViewModel` **should never contain reference to fragment or views** because activites do not survives configuration changes
+
+![](.readme_images/a783cfd1.png)
+
+For comparison, here's how the GameFragment UI data is handled in the starter app before you add ViewModel, and after you add ViewModel:
+
+- Before you add ViewModel: When the app goes through a configuration change such as a screen rotation, the game fragment is destroyed and re-created. The data is lost.
+- After you add ViewModel and move the game fragment's UI data into the ViewModel: All the data that the fragment needs to display is now the ViewModel. When the app goes through a configuration change, the ViewModel survives, and the data is retained.
+
+![](.readme_images/94b468eb.png)
+
+
+- app arch guidelines recommend seperating classes that have different responsibitlies
+- ui controller is UI based class like `activity` or `Fragment`. UI controllers shoudl only contain logic that handles UI and Operating system interactions, they should't contain data to be display in the UI. **put data in a ViewModel**
+- the ViewModel class stores and manages UI-related data. the `ViewModel` class allows data to survive configuration changes such as screen rotations
+- `ViewModel` is one of the recommended android arch comp
+- `ViewModelProvider.Factory` is an interface you can use to create a `ViewModel` object
+  
+UI controller | ViewModel
+---------------|----------
+an example of a UIcontroller is the `ScoreFragment` | an example of a ViewModel is `ScoreViewModel`
+dosen't contain any data to be displayed in the UI | contains data that the UI controller displays in the UI
+contains code for displaying data and user-event code such as click listener | contains code for data processing
+destroyed and re-created during every configuration change | destroyed only when the associated UI controller goes away perman, for an activity when the activity finishes or for frag when frag is detached
+contains views| should never contain referecnes to activies frag or vierws becasue they dont survive configuration changes but the ViewModel does
+contains ref to the associated ViewModel | dosnet contian refernce to the associated UI controller
+
+### LiveData
+- LiveData is an observable data holder class that is lifecycle-aware, one of the android acrhc component
+- you can use LiveData to enable your UI to update automatically when the data updates
+- LiveData is observable which mean that an observer like an anctiviyt or frag can be notified when the data help by the LiveData bject changes
+- LiveData is lifecycle-aware meaning that it only updates observer that are in an acitbce lifecycle state such as STARTED OR RESUMED
+
+### To add LiveData
+- change the type of the data variable in ViewModel to Live Data or MutableLiveData
+
+### MutableLiveData 
+is a LiveData object whose value can be changed MutableLiveData is a generic class so you need to specify the type of data that is holds
+- to change the value of the data held by the LiveData use setValue() or .value in kotlin method on the LiveData variable
+
+### To encapsulate LiveData
+- The liveData inside the ViewmOdel should be **editable**. outside the ViewModel the LiveData should be **readable**. this can be implemtned by using a kotlin backing property
+- a kotlin backing property allows you to return something from a getter other than the exact object.
+- to encapsulate the LiveData, use private MutableLiveData inside the ViewMdodel and return a LiveDat backing property outside the ViewModel
+
+### Observable LiveData
+- LiveData follows an obsever pattern. the "observable" is the LiveData object, and the observers are the methods in the UI controllser, like fragments. whenever the data wrapper inside LiveData changes, teh obserser method in the UI Controllers are notified.
+- to make the LiveDat observvale, attach an observer object to the LiveDat reference in the observers (such as activites and fragments) using the observe() method
+- this LiveDaa observer pattern can be used to communicate from the ViewModel to the UI controller
+
+## Code Review
+
+gradle app
+
+    plugin     id 'kotlin-kapt' 
+               id 'androidx.navigation.safeargs'
+
+
+    buildFeatures {
+        dataBinding true
+    }
+    
+     implementation 'androidx.navigation:navigation-fragment-ktx:2.3.3'
+     implementation 'androidx.navigation:navigation-ui-ktx:2.3.3'
+     
+     implementation 'androidx.lifecycle:lifecycle-viewmodel-ktx:2.3.0'
+
+gradle proj
+    
+      // to be used with the navigation 
+      classpath "androidx.navigation:navigation-safe-args-gradle-plugin:$navigationVersion"
+      
+      ----
+      
+    /** for passing safe args
+
+    * Called when the game is finished
+    */
+    private fun gameFinished() {
+       Toast.makeText(activity, "Game has just finished", Toast.LENGTH_SHORT).show()
+       val action = GameFragmentDirections.actionGameToScore()
+       action.score = viewModel.score
+       NavHostFragment.findNavController(this).navigate(action)
+    }
+            binding.correctButton.setOnClickListener { onCorrect() }
+
+    
+in main acitivyt we add for navigation
+
+    
+      view.findNavController()
+             .navigate(GameFragmentDirections.actionGameFragmentToGameOverFragment())
+                
+
+      <fragment
+            android:id="@+id/nav_host_fragment"
+            android:name="androidx.navigation.fragment.NavHostFragment"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            app:defaultNavHost="true"
+            app:navGraph="@navigation/main_navigation" />
+
+
+there are 3 fragments 
+- Title (1st frag)
+- Game (2nd frag)
+- Score (3rd and final frag end screen)
+
+we add navigation from title > game with `app:launchSingleTop="true"` there will be at most one copy of a given destination on the top of the back stack
+
+Game > Score with popup to Title
+
+Score > Game with popup to Tile and add 1 args score of type Int
+
+side note:
+to use a default changeable text in textview before adding the LiveData
+
+    tools:text="&quot;Tuna&quot;"
+    
+### Title Fragment
+
+Databiding and navigate to the GameFrag
+
+        val binding:TitleFragmentBinding = DataBindingUtil.inflate(inflater, R.layout.title_fragment,container,false)
+    
+        binding.playGameButton.setOnClickListener {
+            findNavController().navigate(TitleFragmentDirections.actionTitleFragmentToGameFragment())
+        }
+        return binding.root
+        
+            
+    <layout xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        xmlns:tools="http://schemas.android.com/tools">
+
+    <data>
+
+        <variable
+            name="revenue"
+            type="Integer" />
+
+        <variable
+            name="amountSold"
+            type="Integer" />
+    </data>
+    
+    ...    
+    android:text="@{amountSold.toString()}"
+    
+
+### GameFragment
+
+first we add the GameFragmentBinding
+    
+        private lateinit var binding: GameFragmentBinding
+
+the we add the reference to the ViewModel
+
+        private lateinit var viewModel: GameViewModel
+
+we inflate the layout using the DataBindingUtil.inflate inside the onCreateView
+    
+        binding = DataBindingUtil.inflate(inflater, R.layout.game_fragment, container, false)
+
+populate the viewModel using the ViewModelProvider
+
+    viewModel = ViewModelProvider(this).get(GameViewModel::class.java)
+
+the variables LiveData in the ViewModel is readOnly and can't be modified, to get notified about the changes in the data we user observable
+>fragment views get destroyed when a user navigates away from a fragm, even though the fagm itseft is not destroy. this essentially creates 2 lifecycles. for the frag and for the frag views. referring to the frag lifecycle instead of the view of the frag can cause subtle bugs when update the frag view. THerefore when setting up observers that affect the frag view you shou
+
+    viewModel.word.observe(viewLifeCycleOwner, Observer{ newWord ->
+        binding.wordTextView.text = newWord
+    })
+    
+to get notified about the Event that changes in LiveData
+
+    viewModel.eventGameFinsih.observe(viewLifecycleOwner, Observer<Boolean> { hasFinished ->
+        if (hasFinished) gameFinished()
+    })
+    
+in the gameFinished we set the onGameFinihsCOmplete() using `viewModel.onGameFinsihCOmplete()`  which sets the value to game finish false 
+
+
+for the onSkip and onCorrect we get the function from the viewModel
+
+    private fun onSkip(){
+        viewModel.onSkip()
+    }
+
+### gameViewModel
+
+encapsulate the data and add backing property
+
+    private val _score = MutableLiveDatga<Int>()
+    val score: LiveData<Int>
+        get() = _score
+        
+this makes the data read only from outside and varible private from the inside 
+
+        init {
+    
+            _word.value = ""
+            _score.value = 0
+        }
+        
+
+to complete the game we check if the world list is empty 
+
+    private fun next word(){
+    
+        if (wordList.isEmpty()){
+            onGameFinsih()
+        else 
+            _word.value = wordList.removeAt(0)
+            
+
+then for methos for button presses
+    
+    onSkip()
+        _score.value = (score.value)?.minus(1)
+        next word()
+           fun onGameFinish() {
+                _eventGameFinish.value = true
+            }
+        
+            fun onGameFinishComplete(){
+                _eventGameFinish.value = false
+            }
+        
+            override fun onCleared() {
+                super.onCleared()
+                Log.i("GameViewModel", "GameViewModel destroyed!")
+            }
+        
+
+
+### ScoreFragment
+
+for the score we also use the private mutable data and public Readonly LiveData using a backing property and another one for an event
+    
+    private lateinit var viewModel: ScoreViewModel
+
+we make a ScoreVIewModeFactory to init the score fragment with a contructor 
+
+    private lateinit var viewModelFactory: ScoreViewModelFactory
+
+inside the onCreateView
+
+     val binding: ScoreFragmentBinding =
+            DataBindingUtil.inflate(inflater, R.layout.score_fragment, container, false)
+
+        viewModelFactory =
+            ScoreViewModelFactory(ScoreFragmentArgs.fromBundle(requireArguments()).score)
+        viewModel = ViewModelProvider(this, viewModelFactory).get(ScoreViewModel::class.java)
+
+        viewModel.score.observe(viewLifecycleOwner, Observer { newScore ->
+                binding.scoreText.text = newScore.toString()
+            })
+    
+            // Navigates back to game when button is pressed
+            viewModel.eventPlayAgain.observe(viewLifecycleOwner, Observer { playAgain ->
+                if (playAgain) {
+                    findNavController().navigate(ScoreFragmentDirections.actionScoreFragmentToGameFragment())
+                    viewModel.onPlayAgainComplete()
+                }
+            })
+
+### ScoreViewModelFactory
+
+    
+    class ScoreViewModelFactory(private val finalScore: Int): ViewModelProvider.Factory {
+    
+        override fun <T : ViewModel?> create(modelClass: Class<T>): T {
+            if (modelClass.isAssignableFrom(ScoreViewModel::class.java)){
+                return ScoreViewModel(finalScore) as T
+            }
+            throw IllegalArgumentException("Unkow ViewModel class")
+        }
+    }
+
+### ScoreViewModel
+
+    private val _score = MutableLiveData<Int>()
+    val score: LiveData<Int>
+        get() = _score
+
+
+    private val _eventPlayAgain = MutableLiveData<Boolean>()
+    val eventPlayAgain:LiveData<Boolean>
+        get() = _eventPlayAgain
+        
+  
+    init {
+
+        Log.i("ScoreViewModel", "Final score is $finalScore")
+        _score.value = finalScore
+    }
+
+    fun onPlayAgain(){
+        _eventPlayAgain.value = true
+    }
+
+    fun onPlayAgainComplete(){
+        _eventPlayAgain.value = false
+    }
+
+

@@ -36,6 +36,7 @@ class GameFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
+
         binding = DataBindingUtil.inflate(inflater, R.layout.game_fragment, container, false)
 
         Log.i("GameFragment", "Called ViewModelProvider.get")
@@ -50,6 +51,9 @@ class GameFragment : Fragment() {
             binding.wordText.text = newWord
         })
 
+        viewModel.eventGameFinish.observe(viewLifecycleOwner, Observer<Boolean> { hasFinished->
+            if (hasFinished) gameFinished()
+        })
 
         binding.correctButton.setOnClickListener { onCorrect() }
         binding.skipButton.setOnClickListener { onSkip() }
@@ -124,21 +128,16 @@ class GameFragment : Fragment() {
 
 
 
-    /** Methods for updating the UI **/
-//        not needed after updating the live data observer
-    private fun updateWordText() {
-        binding.wordText.text = viewModel.word.value.toString()
-    }
-//        not needed after updating the live data observer
-    private fun updateScoreText() {
-        binding.scoreText.text = viewModel.score.toString()
-    }
 
     private fun onEndGame(){
         gameFinished()
     }
 
+
+
     private fun gameFinished(){
+        viewModel.onGameFinishComplete()
+
         Toast.makeText(activity, "game finishde",Toast.LENGTH_LONG).show()
         val action = GameFragmentDirections.actionGameFragmentToScoreFragment()
         action.score = viewModel.score.value?:0
