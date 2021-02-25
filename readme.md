@@ -2026,6 +2026,7 @@ in score fragm
     })
     binding.playAgainButton.setOnClickListener {  viewModel.onPlayAgain()  }
 
+
 ## Summary 
 
 App architecture is a way of designing your apps' classes, and the relationships between them, such that the code is organized, performs well in particular scenarios, and is easy to work with
@@ -2410,4 +2411,37 @@ inside the onCreateView
         _eventPlayAgain.value = false
     }
 
+# Data binding with ViewModel and LiveData
+In the previous codelabs in this lession, you improved the code for the GuessTheWord app. the app now uses `ViewModel` object so the app data survies device-configuration changes such as screen rotations and changes to keyboard avalabilty. you aslp padded obesrvabale `LiveData` so view are notfied automaticatlly when observed data changes
+
+We will bind views to the `ViewModel` classses in the app so that the views in your layout commincate drectly with the ViewModel object (currenty view communicate to viewmodel thru app frag) now we wont need a click handler 
+
+the real power of data binding not by safe biding, but directly to the view objects in your app
+
+**Current app archtecture**
+In te app the views are defined in the XML layout and the data for those views is help in the `ViewModel` objects. between each view and its corresponding `ViewModel` is a UI controller, whoch acts as a relay between them 
+
+![](.readme_images/a027c28f.png)
+
+For exampl
+
+- the Got it button is deined as a button view in the game_fragment.xml layout file
+- when the user taps the got it button a click listerner in the GameFtamgent fragment calls corresponding click lisitenre in GameViewModel
+- teh score is updated in the GameViewModel
+
+the Button view and the GameViewModel dont communicate directly - they need the click listerner thats in the GameFragment 
+
+**ViewModel Passed into the data binding**
+It would be simpler if the views in the layout comminicated directly with data the in hte ViewModel objects without relying on UI controllers
+
+![](.readme_images/09144028.png)
+
+ViewModel objects hold all the UI data in the GuessTheWOrd app. by passing ViewModel objects into the data binding, you can autommate some of the commincation between the view and the ViewModel objects
+in this task you associate the GameViewModel adn ScoreViewModel classes with their corresponind XML layouts You also set up listerner binding to hanclde click event
+
+## Add data binding for the GameViewModel
+
+in this setp you associate GameViewModel with the corresponding layout file game
+
+1. in the game_fragment.xml file add a data-binding variable of the type `GameViewModel`. 
 
