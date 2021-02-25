@@ -42,22 +42,30 @@ class GameFragment : Fragment() {
         Log.i("GameFragment", "Called ViewModelProvider.get")
         viewModel = ViewModelProvider(this).get(GameViewModel::class.java)
 
+        binding.gameViewModel = viewModel
+        // specify the fragment ciew as the lifecycle owner of the binding
+        // this is used so that the binding can observe LiveData update
+        binding.lifecycleOwner = viewLifecycleOwner
+
         viewModel.score.observe(viewLifecycleOwner, Observer { newScore ->
             
             binding.scoreText.text = newScore.toString()
         })
 
-        viewModel.word.observe( viewLifecycleOwner, Observer{ newWord->
-            binding.wordText.text = newWord
-        })
+//        removed because the word is now directly updating in the xml biding
+//        after adding the lifecyle owner to the binding
+//        viewModel.word.observe( viewLifecycleOwner, Observer{ newWord->
+//            binding.wordText.text = newWord
+//        })
 
         viewModel.eventGameFinish.observe(viewLifecycleOwner, Observer<Boolean> { hasFinished->
             if (hasFinished) gameFinished()
         })
 
-        binding.correctButton.setOnClickListener { onCorrect() }
-        binding.skipButton.setOnClickListener { onSkip() }
-        binding.endGameButton.setOnClickListener { onEndGame() }
+//        replaced by calling the function of gameViewModel direcly in the xml
+//        binding.correctButton.setOnClickListener { onCorrect() }
+//        binding.skipButton.setOnClickListener { onSkip() }
+//        binding.endGameButton.setOnClickListener { onEndGame() }
 
 //        not needed after updating the live data observer
 //        updateScoreText()
@@ -112,7 +120,8 @@ class GameFragment : Fragment() {
 
     /** Methods for buttons presses **/
 
-    private fun onSkip() {
+    //        replaced by calling the function of gameViewModel direcly in the xml
+ /*   private fun onSkip() {
         viewModel.onSkip()
 
 //        updateScoreText()
@@ -132,7 +141,7 @@ class GameFragment : Fragment() {
     private fun onEndGame(){
         gameFinished()
     }
-
+*/
 
 
     private fun gameFinished(){

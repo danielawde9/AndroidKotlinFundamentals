@@ -2443,5 +2443,156 @@ in this task you associate the GameViewModel adn ScoreViewModel classes with the
 
 in this setp you associate GameViewModel with the corresponding layout file game
 
-1. in the game_fragment.xml file add a data-binding variable of the type `GameViewModel`. 
+1. in the game_fragment.xml file add a data-bignding variable of the type `GameViewModel`.
 
+    <layout ...>
+
+       <data>
+
+           <variable
+               name="gameViewModel"
+               type="com.example.android.guesstheword.screens.game.GameViewModel" />
+       </data>
+
+       <androidx.constraintlayout...
+
+2. in the GameFragment file pass the GameViewModel into the data binding
+to do this assign viewModel to the binding.gameViewModel variale whcj you declraed in the preivous step. put this code inside onCreateView() anfte the viewModel is initialized.
+
+    binding.gameViewModel = viewModel
+
+## Use listener binding for event handling
+
+Listerner binding are binding expression that run when events such as onClick(), onZoomIn(), or onZoomOut() are triggered. Listener bindings are written as lambda expressions.
+Databinding creaates a listener and sets the listerne on the view. when the listenend-for event happens the listener evaluates the lambda expression. Listener bindings word with the android gradle plusin version 2 or gigher
+in this step we will replace click listener in the `GameFragmetn` with listener binding in game_fragmetns.cml
+
+1. in game_fragmetn.xml add the onClick attribute to the skip_button define a binding expression and call the onSkip() methos in the GameViewModel this binding expression is called listener binding
+
+    <Button
+       android:id="@+id/skip_button"
+       ...
+       android:onClick="@{() -> gameViewModel.onSkip()}"
+       ... />
+
+    <Button
+       android:id="@+id/correct_button"
+       ...
+       android:onClick="@{() -> gameViewModel.onCorrect()}"
+       ... />
+
+    <Button
+       android:id="@+id/end_game_button"
+       ...
+       android:onClick="@{() -> gameViewModel.onGameFinish()}"
+       ... />
+
+In GameFragment, remove the statements that set the click listeners, and remove the functions that the click listeners call. You no longer need them.
+
+    binding.correctButton.setOnClickListener { onCorrect() }
+    binding.skipButton.setOnClickListener { onSkip() }
+    binding.endGameButton.setOnClickListener { onEndGame() }
+
+    /** Methods for buttons presses **/
+    private fun onSkip() {
+       viewModel.onSkip()
+    }
+    private fun onCorrect() {
+       viewModel.onCorrect()
+    }
+    private fun onEndGame() {
+       gameFinished()
+    }
+
+## Add data binding for the ScoreViewModel
+
+ this step, you associate ScoreViewModel with the corresponding layout file, score_fragment.xml.
+
+In the score_fragment.xml file, add a binding variable of the type ScoreViewModel. This step is similar to what you did for GameViewModel above.
+
+    <layout ...>
+       <data>
+           <variable
+               name="scoreViewModel"
+               type="com.example.android.guesstheword.screens.score.ScoreViewModel" />
+       </data>
+       <androidx.constraintlayout.widget.ConstraintLayout
+
+    <Button
+       android:id="@+id/play_again_button"
+       ...
+       android:onClick="@{() -> scoreViewModel.onPlayAgain()}"
+       ... />
+
+ScoreFragment, inside onCreateView(), initialize the viewModel. Then initialize the binding.scoreViewModel binding variable.
+
+    viewModel = ...
+    binding.scoreViewModel = viewModel
+
+In ScoreFragment, remove the code that sets the click listener for the playAgainButton. If Android Studio shows an error, clean and rebuild the project.
+
+    remove
+    binding.playAgainButton.setOnClickListener {  viewModel.onPlayAgain()  }
+
+Troubleshooting data-binding error messages
+When an app uses data binding, the compilation process generates intermediate classes that are used for the data binding. An app can have errors that Android Studio doesn't detect until you try to compile the app, so you don't see warnings or red code while you're writing the code. But at compile time, you get cryptic errors that come from the generated intermediate classes.
+
+If you get a cryptic error message:
+
+Look carefully at the message in the Android Studio Build pane. If you see a location that ends in databinding, there's an error with data binding.
+In the layout XML file, check for errors in onClick attributes that use data binding. Look for the function that the lambda expression calls, and make sure that it exists.
+In the <data> section of the XML, check the spelling of the data-binding variable.
+
+
+## add word LiveData to the game_fragment.xml
+
+we bind the cirrent word text view directly to the LiveDat aobject in the ViewModel
+
+1. in the game_fragment.xml add android:text attribute to the word_text text view
+
+    <TextView
+       android:id="@+id/word_text"
+       ...
+       android:text="@{gameViewModel.word}"
+       ... />
+
+notice tha tyou dont have to use `word.value` instead you can use the actual LiveData object. the LiveData object displays the current value of the word. if the value of word is null the LiveData object displays an empty string
+
+2. in the GameFragment, in on createView after init the gameVewModel set the frag ciew as the lifecycow owner of the binding variable
+
+    binding.gameViewModel = ...
+    // Specify the fragment view as the lifecycle owner of the binding.
+    // This is used so that the binding can observe LiveData updates
+    binding.lifecycleOwner = viewLifecycleOwner
+
+Code to remove:
+
+
+    /** Setting up LiveData observation relationship **/
+    viewModel.word.observe(viewLifecycleOwner, Observer { newWord ->
+       binding.wordText.text = newWord
+    })
+
+## Add score LiveData to the score_fragment.xml file
+n score_fragment.xml, add the android:text attribute to the score text view. Assign scoreViewModel.score to the text attribute. Because the score is an integer, convert it to a string using String.valueOf().
+
+    <TextView
+       android:id="@+id/score_text"
+       ...
+       android:text="@{String.valueOf(scoreViewModel.score)}"
+       ... />
+In ScoreFragment, after initializing the scoreViewModel, set the current activity as the lifecycle owner of the binding variable.
+
+    binding.scoreViewModel = ...
+    // Specify the fragment view as the lifecycle owner of the binding.
+    // This is used so that the binding can observe LiveData updates
+    binding.lifecycleOwner = viewLifecycleOwner
+
+In ScoreFragment, remove the observer for the score object.
+Code to remove:
+
+
+    // Add observer for score
+    viewModel.score.observe(viewLifecycleOwner, Observer { newScore ->
+       binding.scoreText.text = newScore.toString()
+    })
