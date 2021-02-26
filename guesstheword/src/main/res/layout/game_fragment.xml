@@ -49,7 +49,7 @@
             app:layout_constraintTop_toBottomOf="@+id/word_is_text"
             app:layout_constraintVertical_chainStyle="packed"
             tools:text="&quot;Tuna&quot;"
-            android:text="@{gameViewModel.word}"/>
+            android:text="@{@string/quote_format(gameViewModel.word)}"/>
 
         <TextView
             android:id="@+id/timer_text"

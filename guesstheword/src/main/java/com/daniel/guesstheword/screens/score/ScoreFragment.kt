@@ -1,3 +1,4 @@
+
 package com.daniel.guesstheword.screens.score
 
 import android.os.Bundle
@@ -31,10 +32,12 @@ class ScoreFragment : Fragment() {
 //        binding.scoreText.text = viewModel.score.toString()
 
         binding.scoreViewModel = viewModel
+        binding.lifecycleOwner = viewLifecycleOwner
 
-        viewModel.score.observe(viewLifecycleOwner, Observer { newScore ->
-            binding.scoreText.text = newScore.toString()
-        })
+//        removed after adding the viewmodel directly to xml and binding the lifecycle to the viewlifecyclwo owner
+//        viewModel.score.observe(viewLifecycleOwner, Observer { newScore ->
+//            binding.scoreText.text = newScore.toString()
+//        })
 
         // Navigates back to game when button is pressed
         viewModel.eventPlayAgain.observe(viewLifecycleOwner, Observer { playAgain ->

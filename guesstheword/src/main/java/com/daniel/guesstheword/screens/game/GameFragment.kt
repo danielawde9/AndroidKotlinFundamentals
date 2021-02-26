@@ -47,10 +47,11 @@ class GameFragment : Fragment() {
         // this is used so that the binding can observe LiveData update
         binding.lifecycleOwner = viewLifecycleOwner
 
-        viewModel.score.observe(viewLifecycleOwner, Observer { newScore ->
-            
-            binding.scoreText.text = newScore.toString()
-        })
+        //        removed because the word is now directly updating in the xml biding
+//        viewModel.score.observe(viewLifecycleOwner, Observer { newScore ->
+//
+//            binding.scoreText.text = newScore.toString()
+//        })
 
 //        removed because the word is now directly updating in the xml biding
 //        after adding the lifecyle owner to the binding

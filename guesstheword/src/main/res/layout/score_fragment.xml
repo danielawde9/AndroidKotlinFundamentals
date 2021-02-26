@@ -6,7 +6,7 @@
     <data>
         <variable
             name="scoreViewModel"
-            type="com.daniel.guesstheword.screens.game.ScoreViewModel" />
+            type="com.daniel.guesstheword.screens.score.ScoreViewModel" />
     </data>
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/score_layout"
@@ -47,7 +47,7 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/you_scored_text"
             app:layout_constraintVertical_chainStyle="packed"
-            tools:text="40" />
+            tools:text="{@String.valueOf(scoreViewModel.score)}" />
 
         <Button
             android:id="@+id/play_again_button"

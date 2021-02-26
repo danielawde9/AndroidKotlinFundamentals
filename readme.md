@@ -2596,3 +2596,83 @@ Code to remove:
     viewModel.score.observe(viewLifecycleOwner, Observer { newScore ->
        binding.scoreText.text = newScore.toString()
     })
+
+## add string formatiing with data binding 
+in the layout you can add string formatting along with data binding, in this task, you format the current word to add quotes around it you aslo format the core to prefix current score
+
+1. in string.xml add to format the word and score 
+    
+    
+    <string name="quote_format">\"%s\"</string>
+    <string name="score_format">Current Score: %d</string>
+
+2.In game_fragment.xml, update the text attribute of the word_text text view to use the quote_format string resource. Pass in gameViewModel.word. This passes the current word as an argument to the formatting string.
+
+
+game frag
+
+    android:id="@+id/word_text"
+    android:text="@{@string/quote_format(gameViewModel.word)}"
+
+    android:id="@+id/score_text"
+    android:text="@{@string/score_format(gameViewModel.score)}"
+            
+In GameFragment class, inside the onCreateView() method, remove the score observer code.
+
+    Code to remove:
+    
+    
+    viewModel.score.observe(viewLifecycleOwner, Observer { newScore ->
+       binding.scoreText.text = newScore.toString()
+    })
+    
+## Summary
+
+The Data Binding Library works seamlessly with Android Architecture Components like ViewModel and LiveData.
+The layouts in your app can bind to the data in the Architecture Components, which already help you manage the UI controller's lifecycle and notify about changes in the data
+
+### ViewModel data binding
+You can associate a ViewModel with a layout by using data binding.
+ViewModel objects hold the UI data. By passing ViewModel objects into the data binding, you can automate some of the communication between the views and the ViewModel objects.
+How to associate a ViewModel with a layout:
+
+In the layout file, add a data-binding variable of the type ViewModel.
+
+    <data>
+        <variable
+            name="gameViewModel'
+            type="packagename.xyz.GameViewModel"
+            
+            
+     </data>
+     
+
+in game fragmetn opass the GameViewModel into the Data Binding 
+
+    binding.gameViewModel = viewModel
+    
+### listener binding
+
+binding expression in the layout wheck click event such as onCLick()
+wirttin as lambda expresiion
+listerne binding we replace the click listerner in ui controller 
+
+    android:onClick="@{()->gameViewModel.onSkip()}"
+    
+### adding liveData to data binding
+LiveData objects can be used as a data-binding source to automatically notify the UI about changes in the data.
+You can bind the view directly to the LiveData object in the ViewModel. When the LiveData in the ViewModel changes, the views in the layout can be automatically updated, without the observer methods in the UI controller
+
+    android:text="@{gameViewModel.word}"
+    
+to make the LiveData databinding workd set the current activity (the UI controller_ as the lifecycle owner of the binding variable in tge ui controller 
+
+    binding.lifecycleOwner = this (in frag case viewLifeCYcleOwner
+
+### string formatting with data binding 
+Using data binding, you can format a string resource with placeholders like %s for strings and %d for integers.
+To update the text attribute of the view, pass in the LiveData object as an argument to the formatting string.
+
+    android:text="@{@string/quote_format(gameViewModel.word)}"
+    
+# LiveData transformation 
