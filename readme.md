@@ -2676,3 +2676,121 @@ To update the text attribute of the view, pass in the LiveData object as an argu
     android:text="@{@string/quote_format(gameViewModel.word)}"
     
 # LiveData transformation 
+
+previously the app implemetns the `LiveData` observer pattern to observe the `ViewModel` data. the Views in the UI controller observe the `LiveData` in the `ViewModel` and update the data to be displayed.
+
+when passing `LiveData` between the components, sometimes you might want to map or transform the data.
+we might need to do calculations, display only a subset of the data or change the renditon of the data.
+
+ex: for the `word` LiveData you could create a transformation that ruturn the number of the letters in the word rather than the word it self
+
+You could transform LiveDat using the helper in the `Transformation` class
+
+- Transformations.map
+- Transformations.switchMap
+
+## adding a timer
+add the logic for the timer in the `GameViewModel` so that the timer does not get destroyed druing configuration changes. the fragment contains the code to update the timer text view as teh timer ticks
+
+create a companion object to help the timer constants
+
+    companion obejct {
+        
+        // time when the game is over 
+        private const val DONE = 0L 
+        
+        // countdown time interval
+        private const val ONE_SECOND = 1000L
+        
+        // total time for the game
+        private const val COUNTDOWN_TIME = 60000L
+        
+    }
+    
+To store the countdown time of the timer, add a MutableLiveData member variable called _currentTime and a backing property, currentTime.
+
+    // Countdown time
+    private val _currentTime = MutableLiveData<Long>()
+    val currentTime: LiveData<Long>
+       get() = _currentTime
+    
+    private val timer: CountDownTimer
+
+Inside the init block, initialize and start the timer. Pass in the total time, COUNTDOWN_TIME. For the time interval, use ONE_SECOND. Override the callback methods onTick() and onFinish() and start the timer.
+
+    // Creates a timer which triggers the end of the game when it finishes
+    timer = object : CountDownTimer(COUNTDOWN_TIME, ONE_SECOND) {
+    
+       override fun onTick(millisUntilFinished: Long) {
+           
+       }
+    
+       override fun onFinish() {
+           
+       }
+    }
+    
+    timer.start()
+    
+implement the onTick() callback method which is called on every interval or on every tick. update the _currentTime, using the passed in parameter `millisUntilFinishde` the `millisUntilFinished` is the amount of the time until the timer is finishde in millisecont > to seconds and assign it to _currentTime
+
+
+        override fun onTick(millisUntilFinished: Long)
+        {
+           _currentTime.value = millisUntilFinished/ONE_SECOND
+        }
+        override fun onFinish() {
+            // where done is 0L
+           _currentTime.value = DONE
+           onGameFinish()
+        }
+
+Update the nextWord() method to reset the word list when the list is empty, instead of finishing the game.
+
+    private fun nextWord() {
+       // Shuffle the word list, if the list is empty 
+       if (wordList.isEmpty()) {
+           resetList()
+       } else {
+       // Remove a word from the list
+       _word.value = wordList.removeAt(0)
+       }
+    }
+        
+inside the onCleared() method cancel the timer to avoid memory leaks you can remove the log stat. the onCLreared is called before the ViewModel is destroyed 
+    
+    override fun onCleared() {
+       super.onCleared()
+       // Cancel the timer
+       timer.cancel()
+    }
+Run your app and play the game. Wait 60 seconds, and the game finishes automatically. However, the timer text is not displayed on the screen. You fix that next.
+
+## Add transformation for the LiveData
+
+The `Transformation.map()` method provides a way to perform data manipulations on the source `LiveData` and return a result `LiveData` onject. these transformations arent calculated unless an observer is observinf the returned `LiveData` object
+
+this methos takes the source `LiveData` and a function as parameters the function manipulates the source `LiveData`
+
+> note: the lambda function passed to `Transformations.map()` is excuted om the main thread so do not include long-running tasks
+
+in this task you will format the elapsed time `LiveData` object into a new string liveadat object in "MM:SS" format you will also displa the formatted elapsed time on the screen
+
+the `game_fragment.xml` layout file already includes the timer text view so far the text veew has had no text to display so the timer timext has niiit been visiblke
+
+1. in the `GameViewModel` calss after instantiating the `currentTime` create a new LiveData object named `currentTImeString` this objet is for the formatted string version of the currentTime 
+2. use `Transformations.map()` to define `currentTimeString` pass in the current time and a lambda function to format the time. you can implement the lambda function using the `DateUtils.formatElapsedTime()` utilyt method which taks a ling number of seconds and formats is to MM:SS string format 
+
+    
+    // The String version of the current time
+    val currentTimeString = Transformations.map(currentTime) { time ->
+       DateUtils.formatElapsedTime(time)
+    }
+    
+    <TextView
+       android:id="@+id/timer_text"
+       ...
+       android:text="@{gameViewModel.currentTimeString}"
+       ... />
+
+to add a word hint 
