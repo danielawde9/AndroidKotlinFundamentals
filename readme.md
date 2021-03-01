@@ -2794,3 +2794,46 @@ the `game_fragment.xml` layout file already includes the timer text view so far 
        ... />
 
 to add a word hint 
+In GameViewModel class, add a val to transform the current word into the hint.
+
+    // The Hint for the current word
+    val wordHint = Transformations.map(word) { word ->
+       val randomPosition = (1..word.length).random()
+       "Current word has " + word.length + " letters" +
+               "\nThe letter at position " + randomPosition + " is " +
+               word.get(randomPosition - 1).toUpperCase()
+    }
+    
+    
+    android:text="@{gameViewModel.wordHint}"
+
+# summary 
+## Transforming LiveData 
+- Sometimes you want to transform the results of LiveData. For example, you might want to format a Date string as "hours:mins:seconds," or return the number of items in a list rather than returning the list itself. To perform transformations on LiveData, use helper methods in the Transformations class.
+- The Transformations.map() method provides an easy way to perform data manipulations on the LiveData and return another LiveData object. The recommended practice is to put data-formatting logic that uses the Transformations class in the ViewModel along with the UI data.
+
+## Displaying the result of a transformation in a TextView
+- Make sure the source data is defined as LiveData in the ViewModel.
+- Define a variable, for example newResult. Use Transformation.map() to perform the transformation and return the result to the variable.
+
+
+    val newResult = Transformations.map(someLiveData) { input ->
+       // Do some transformation on the input live data
+       // and return the new value
+    }
+
+- Make sure the layout file that contains the TextView declares a <data> variable for the ViewModel.
+
+
+    <data>
+       <variable
+           name="MyViewModel"
+           type="com.example.android.something.MyViewModel" />
+    </data>
+
+- In the layout file, set the text attribute of the TextView to the binding of the newResult of the ViewModel. For example:
+
+
+    android:text="@{SomeViewModel.newResult}"
+
+

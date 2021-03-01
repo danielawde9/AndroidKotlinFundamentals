@@ -27,6 +27,14 @@ class GameViewModel : ViewModel() {
     val currentTime:LiveData<Long>
         get() = _currentTime
 
+    val wordHint = Transformations.map(word) { word ->
+        val randomPosition = (1..word.length).random()
+        "Current word has " + word.length + " letters" +
+                "\nThe letter at position " + randomPosition + " is " +
+                word.get(randomPosition - 1).toUpperCase()
+    }
+
+
     val currentTimeString = Transformations.map(currentTime) {time->
         DateUtils.formatElapsedTime(time)
     }
